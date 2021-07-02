@@ -56,34 +56,38 @@ class bitstampTrader {
 
     }
 
-    async getBitstampBuyingPower() {
-        const balance = await limiter.schedule(() => orderBitstamp.balance().then(({body: data}) => data));
+    async getBitstampBuyingPower(){
+        const balance = await limiter.schedule(() => bitstamp.balance().then(({body:data}) => data));
         const UsdBalance = balance.usd_balance
+        global.buyingPower = UsdBalance
+        console.log('getting buying power', UsdBalance, global.buyingPower)
         return UsdBalance
     }
 
     async buyBitstamp(quantity, price, asset, daily_order) {
-        if (quantity > 0) {
+        if (quantity > 0 && global.inTrade === true) {
             // let addUSD = tradSymbolAllLowercase + 'usd';
             let quantityFixed = $(quantity).toNumber()
+            global.tradeData.amount = quantityFixed
             console.log('buying', quantityFixed, global.tradeData.price, asset, null, false)
             return await limiter.schedule(() => orderBitstamp.buyLimitOrder(quantityFixed, global.tradeData.price, asset, null, false).then(resp => {
                 console.log(asset, 'BOUGHT from the lowest asker!!!', resp)
                 global.inTrade = false
-                global.purchasedSymbols = []
+                global.purchasedSymbols.push({asset: asset, quantity: quantityFixed, price: global.tradeData.price})
             }).catch(err => {
-                if (err){
-                    global.inTrade = false
-                }
-                console.log('buy error', err, quantity, price, asset, daily_order)
-            }))
+                this.getBitstampBuyingPower().then(p =>{
+                global.buyingPower = p
+                console.log('line 82 in trader error,  wrong buying power, re-adjust buying power', global.buyingPower)
+                console.log('buy error params', err, quantityFixed, global.tradeData.price, asset, false)
+
+            })
+        }))
         }
-
-
     }
 
+
     async sellBitstamp(amount, price, currency, limit_price, daily_order) {
-        if (amount > 0) {
+        if (amount > 0 && global.inTrade === true) {
             let pricedFixed = $(price).toNumber()
             let sellAsset = currency.toLowerCase() + 'usd'
             console.log('selling', amount, pricedFixed, sellAsset, null, false)
@@ -93,7 +97,7 @@ class bitstampTrader {
                 global.purchasedSymbols = []
             }).catch(err => {
                 global.inTrade = false
-                console.log('selling error', err)
+                console.log('selling error', err, amount, pricedFixed, sellAsset)
             })
 
         }

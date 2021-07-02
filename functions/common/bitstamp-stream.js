@@ -26,6 +26,9 @@ turnOffTradeStream = () =>{
  async turnOnOrderBook(symbol, orderType, sellAmount, price){
     global.inTrade = true
     console.log('symbol=', symbol,  'order type= ',orderType, 'buying power=', global.buyingPower, 'price=', price)
+     global.tradeData.symbolInTrade = symbol
+     global.tradeData.orderType = orderType
+     global.tradeData.amount = global.buyingPower / price
     let tradingSymbol = symbol + 'usd'
     let streamingSymbol = symbol + '_USD'
     const bitstampStream = new BitstampStream();
@@ -38,7 +41,7 @@ turnOffTradeStream = () =>{
             let convertedHighestBidQty = $.of(data.bids[0][1]).valueOf()
             if(convertedHighestBidQty >= 1){
                 // sell to highest bid
-                if (orderType === 'sell' && global.purchasedSymbols.asset === symbol){
+                if (orderType === 'sell'){
                     // todo add min order!!!!!!!!!!!!!!!!!!!!!
                     let limit_price = $.of(data.bids[0][0]).valueOf()
                     console.log(symbol, 'best bid', limit_price)
@@ -65,17 +68,17 @@ turnOffTradeStream = () =>{
             let convertedLowestAskQty = $.of(data.asks[lastAsk_tick][1]).valueOf()
            // console.log('ask qty', convertedLowestAskQty)
             global.tradeData.price = $.of(data.asks[0][0]).valueOf()
-            let buyAmount = global.buyingPower / global.tradeData.price
+            let buyAmount = global.buyingPower / price
             let amountNumber = $(buyAmount).toNumber();
-            let seventyFivePercentOfBuyingPower = +$$(
+            let eightyPercentOfBuyingPower = +$$(
                 $(amountNumber),
-                subtractPercent(15)
+                subtractPercent(20)
             )
-                console.log('75% of buying power', seventyFivePercentOfBuyingPower)
+                console.log('80% of buying power', eightyPercentOfBuyingPower)
                 const trader = new bitStampTrader()
                 console.log('divided buying power by price', amountNumber)
-                global.tradeData.amount = seventyFivePercentOfBuyingPower
-                let quantity = seventyFivePercentOfBuyingPower.toFixed(5)
+                global.tradeData.amount = eightyPercentOfBuyingPower
+                let quantity = eightyPercentOfBuyingPower.toFixed(5)
                 let tradSymbolAllLowercase = symbol.toLowerCase() + 'usd'
                 console.log('buying in order book', quantity, global.tradeData.price, tradSymbolAllLowercase, global.tradeData.daily_order)
                 return trader.buyBitstamp(quantity, global.tradeData.price, tradSymbolAllLowercase, false )
