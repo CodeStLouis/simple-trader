@@ -44,15 +44,14 @@ turnOffTradeStream = () =>{
                 if (orderType === 'sell'){
                     // todo add min order!!!!!!!!!!!!!!!!!!!!!
                     let limit_price = $.of(data.bids[0][0]).valueOf()
-                    console.log(symbol, 'best bid', limit_price)
                     global.tradeData.price = limit_price
                     let orderAmount = global.purchasedSymbols.qty
-                   console.log('selling trade data', global.tradeData)
+                   console.log('selling trade data line 49 bitstream', global.tradeData)
                    // global.tradeData.price = $.of(data.bids[0][0]).valueOf()
-                    let price = $.of(data.bids[0][0]).valueOf()
+                   // let price = $.of(data.bids[0][0]).valueOf()
                     let symbol = tradingSymbol.toLowerCase()
-                    console.log('all lowercase no underscores', symbol, 'price', price)
-                    console.log('selling in order book', sellAmount, price, symbol, false)
+                  //  console.log('all lowercase no underscores', symbol, 'price', price)
+                 //   console.log('selling in order book', sellAmount, price, symbol, false)
                     trader.sellBitstamp(sellAmount, price, symbol, null, false)
                 }
                 //TODO make sure we are actually getting highest bid
@@ -77,10 +76,10 @@ turnOffTradeStream = () =>{
                 console.log('80% of buying power', eightyPercentOfBuyingPower)
                 const trader = new bitStampTrader()
                 console.log('divided buying power by price', amountNumber)
-                global.tradeData.amount = eightyPercentOfBuyingPower
+                global.tradeData.amount = eightyPercentOfBuyingPower.toFixed(6)
                 let quantity = eightyPercentOfBuyingPower.toFixed(5)
-                let tradSymbolAllLowercase = symbol.toLowerCase() + 'usd'
-                console.log('buying in order book', quantity, global.tradeData.price, tradSymbolAllLowercase, global.tradeData.daily_order)
+                let tradSymbolAllLowercase = symbol.toLowerCase()
+             //   console.log('buying in order book', quantity, global.tradeData.price, tradSymbolAllLowercase, global.tradeData.daily_order)
                 return trader.buyBitstamp(quantity, global.tradeData.price, tradSymbolAllLowercase, false )
                 }
         });

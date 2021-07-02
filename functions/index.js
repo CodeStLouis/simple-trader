@@ -50,6 +50,9 @@ const crypto = [
     'LINK',
     'LTC',
     'OMG',
+
+]
+const binanceAssets = [
     'ADA',
     'NANO',
     'UNI',
@@ -164,7 +167,7 @@ async function getBitstampBalance(assetSymbol){
     // console.debug('I have ', assetInAvailableFormat, assetGreaterThanZero, 'or usd amount', buyingPower)
     if (assetGreaterThanZero){
       //  console.log('asset greater than 0', assetSymbol)
-        global.purchasedSymbols.push({asset: assetSymbol, qty: assetConvertedAmount})
+        global.purchasedSymbols.push({asset: assetSymbol, quantity: assetConvertedAmount })
         console.log('global variables assigned', global.purchasedSymbols)
         // const ticker = await bitstamp.ticker(CURRENCY.XLM_USD).then(({status, headers, body}) => console.log('ticker body', body));
         if(assetGreaterThanZero){
@@ -177,7 +180,7 @@ async function getBitstampBalance(assetSymbol){
     }
 
 }
-async function getBuyingPower(){
+async function getBitstampBuyingPower(){
     const balance = await limiter.schedule(() => bitstamp.balance().then(({body:data}) => data));
     const UsdBalance = balance.usd_balance
     global.buyingPower = UsdBalance
@@ -199,12 +202,12 @@ setInterval(function() {
         }
 
     }
-    getBuyingPower().then(resp =>{
-        console.log('first buying power call line 203')
+    getBitstampBuyingPower().then(resp =>{
+        console.log('first buying power call line 203 for bitstamp')
     })
     console.log('NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
     if(global.inTrade === true){
-        getBuyingPower().then(p =>{
+        getBitstampBuyingPower().then(p =>{
         const orderBook = new streamBitstampService()
         let orderType = global.tradeData.orderType
         let symbol = global.tradeData.symbolInTrade
@@ -241,7 +244,7 @@ setInterval(function() {
          )
          }
      }
-}, 120000)
+}, 30000)
 
 async function getCandlesLastTick(c){
     let useAbleSymbol = c + 'USD'
@@ -255,12 +258,12 @@ async function getCandlesLastTick(c){
             //  binanceService.balance()
             getSMANine(c, i).then(smaNineData => {
                 console.log(c, '9', smaNineData, 'close', close)
-                getSMAFive(c, i).then(smaFIVE =>{
+                /*getSMAFive(c, i).then(smaFIVE =>{
                     if(smaFIVE > smaNineData){
                         smaFiveAboveNine.push({symbol: c, closed: close, interval: i})
                       //  console.log('SMA 5 above Nine Assets', smaFiveAboveNine)
                     }
-                })
+                })*/
                 if (smaNineData < close ) {
                     console.log(c, 'sma lower than close, ', i, ' if you have buying power and volume is there ', global.buyingPower, 'volume=', volume)
                     if (global.buyingPower > 20) {
@@ -293,17 +296,18 @@ async function getCandlesLastTick(c){
                             console.log(c, 'sma 5 greater than close', close, 'at', i, ' sell if you own it')
                             for (let s of global.purchasedSymbols) {
                                 if (s.asset === c) {
-                                    console.log(c, 'trying to sell', s.asset, s.qty, close)
+                                    console.log(c, 'trying to sell', s.asset, s.quantity, close)
                                     global.inTrade = true
                                     let orderType = global.tradeData.orderType = 'sell'
                                     global.tradeData.price = close
                                     //TODO turn on stream and sell something
                                     const stream = new streamBitstampService()
                                     global.tradeData.symbolInTrade = s.asset
-                                    stream.turnOnOrderBook(s.asset, orderType, s.qty, close)
+                                    stream.turnOnOrderBook(s.asset, orderType, s.quantity, close)
                                 }
                         }
                     } else {
+                            console.log(c, 'dont own it if you own it')
                             return 'dont own it'
                         }
                     })
@@ -314,7 +318,7 @@ async function getCandlesLastTick(c){
             })
 
 
-        }, {limit: 60000, endTime: rawUtcTimeNow}));
+        }, {limit: 1000, endTime: rawUtcTimeNow}));
     }
 
 

@@ -89,7 +89,7 @@ class bitstampTrader {
     async sellBitstamp(amount, price, currency, limit_price, daily_order) {
         if (amount > 0 && global.inTrade === true) {
             let pricedFixed = $(price).toNumber()
-            let sellAsset = currency.toLowerCase() + 'usd'
+            let sellAsset = currency.toLowerCase()
             console.log('selling', amount, pricedFixed, sellAsset, null, false)
             return await orderBitstamp.sellLimitOrder(amount, pricedFixed, sellAsset, null, false).then(resp => {
                 console.log(resp, 'SOLD!!', currency)
