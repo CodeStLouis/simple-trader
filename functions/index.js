@@ -271,10 +271,10 @@ async function getCandlesLastTick(c){
                         global.inTrade = true
                         const stream = new streamBitstampService()
                         let orderType = global.tradeData.orderType = 'buy'
-                        global.inTrade = true
                         global.tradeData.symbolInTrade = c
-                        global.tradeData.amount = global.buyingPower / $(close).toNumber()
-                        stream.turnOnOrderBook(c, orderType, null, close )
+                        let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
+                        console.log('amount in buy sma greater than close line 276', amount)
+                        stream.turnOnOrderBook(c, orderType, amount, close )
                     } else {
                         const noBuyingPower = 'no buying power'
                         return noBuyingPower
@@ -285,8 +285,6 @@ async function getCandlesLastTick(c){
             })
             getSMAFive(c, i).then(smaFiveData => {
                 console.log(c, '5', smaFiveData, 'close =', close, 'at interval', i)
-                let smaConverted = $.of(smaFiveData).valueOf()
-                let convertedClose = $.of(close).valueOf()
                 let sellAsset = (smaFiveData > close)
                 if (sellAsset === true) {
                     // do we own it
@@ -307,7 +305,7 @@ async function getCandlesLastTick(c){
                                 }
                         }
                     } else {
-                            console.log(c, 'dont own it if you own it')
+                            console.log(c, 'dont own it')
                             return 'dont own it'
                         }
                     })

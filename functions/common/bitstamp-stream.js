@@ -23,7 +23,7 @@ turnOffTradeStream = () =>{
     bitstampStream.close();
 
 }
- async turnOnOrderBook(symbol, orderType, sellAmount, price){
+ async turnOnOrderBook(symbol, orderType, amount, price){
     global.inTrade = true
     console.log('symbol=', symbol,  'order type= ',orderType, 'buying power=', global.buyingPower, 'price=', price)
      global.tradeData.symbolInTrade = symbol
@@ -51,8 +51,8 @@ turnOffTradeStream = () =>{
                    // let price = $.of(data.bids[0][0]).valueOf()
                     let symbol = tradingSymbol.toLowerCase()
                   //  console.log('all lowercase no underscores', symbol, 'price', price)
-                 //   console.log('selling in order book', sellAmount, price, symbol, false)
-                    trader.sellBitstamp(sellAmount, price, symbol, null, false)
+                 //   console.log('selling in order book', amount, price, symbol, false)
+                    trader.sellBitstamp(amount, price, symbol, null, false)
                 }
                 //TODO make sure we are actually getting highest bid
 

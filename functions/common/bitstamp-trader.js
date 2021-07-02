@@ -57,7 +57,7 @@ class bitstampTrader {
     }
 
     async getBitstampBuyingPower(){
-        const balance = await limiter.schedule(() => bitstamp.balance().then(({body:data}) => data));
+        const balance = await limiter.schedule(() => orderBitstamp.balance().then(({body:data}) => data));
         const UsdBalance = balance.usd_balance
         global.buyingPower = UsdBalance
         console.log('getting buying power', UsdBalance, global.buyingPower)
