@@ -1,0 +1,23 @@
+{
+  "name": "bitstamp-scanner",
+  "version": "1.0.0",
+  "description": "scans for sma 5 above 9",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brandon Twitty",
+  "license": "ISC",
+  "engines": {
+    "node": "12"
+  },
+  "dependencies": {
+    "amqplib": "^0.8.0",
+    "binance-us": "^0.20.3",
+    "binance-us-api-node": "^0.10.22",
+    "bottleneck": "^2.19.5",
+    "express": "^4.17.1",
+    "node-bitstamp": "^3.1.0",
+    "trading-indicator": "^1.0.4-beta"
+  }
+}

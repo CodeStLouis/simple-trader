@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../alpaca-stock-trader/alpaca-stock-trader.iml" filepath="$PROJECT_DIR$/../alpaca-stock-trader/alpaca-stock-trader.iml" />
+      <module fileurl="file://$PROJECT_DIR$/express-server/express-server.iml" filepath="$PROJECT_DIR$/express-server/express-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/simple-trader.iml" filepath="$PROJECT_DIR$/.idea/simple-trader.iml" />
+    </modules>
+  </component>
+</project>

@@ -1,0 +1,29 @@
+{
+  "name": "express-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "../bitstamp-scanner/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.8.0",
+    "binance-api-node": "^0.11.3",
+    "express": "^4.17.1",
+    "node-binance-api": "^0.12.5",
+    "trading-indicator": "^1.0.4-beta",
+    "websocket": "^1.0.34",
+    "ws": "^7.4.6"
+  },
+  "devDependencies": {
+    "bottleneck": "^2.19.5",
+    "cors": "^2.8.5",
+    "moneysafe": "^2.2.1",
+    "node-binance-us-api": "^0.10.1",
+    "node-bitstamp": "^3.1.0"
+  },
+  "private": true
+}
