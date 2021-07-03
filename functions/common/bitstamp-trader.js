@@ -69,16 +69,16 @@ class bitstampTrader {
             // let addUSD = tradSymbolAllLowercase + 'usd';
             let quantityFixed = $(quantity).toNumber()
             global.tradeData.amount = quantityFixed
-            console.log('buying', quantityFixed, global.tradeData.price, asset, null, false)
+            console.log('buying', quantityFixed, price, asset, null, false)
             return await limiter.schedule(() => orderBitstamp.buyLimitOrder(quantityFixed, global.tradeData.price, asset, null, false).then(resp => {
                 console.log(asset, 'BOUGHT from the lowest asker!!!', resp)
                 global.inTrade = false
-                global.purchasedSymbols.push({asset: asset, quantity: quantityFixed, price: global.tradeData.price})
+                global.purchasedSymbols.push({asset: asset, quantity: quantityFixed, price: price})
             }).catch(err => {
                 this.getBitstampBuyingPower().then(p =>{
                 global.buyingPower = p
-                console.log('line 82 in trader error,  wrong buying power, re-adjust buying power', global.buyingPower)
-                console.log('buy error params', err, quantityFixed, global.tradeData.price, asset, false)
+                console.log('line 80 in trader error,  wrong buying power, re-adjust buying power', global.buyingPower)
+                console.log('buy error params', err, quantityFixed, price, asset, false)
 
             })
         }))
@@ -91,14 +91,14 @@ class bitstampTrader {
             let pricedFixed = $(price).toNumber()
             let sellAsset = currency.toLowerCase()
             console.log('selling', amount, pricedFixed, sellAsset, null, false)
-            return await orderBitstamp.sellLimitOrder(amount, pricedFixed, sellAsset, null, false).then(resp => {
+            return  await limiter.schedule(() =>  orderBitstamp.sellLimitOrder(amount, pricedFixed, sellAsset, null, false).then(resp => {
                 console.log(resp, 'SOLD!!', currency)
                 global.inTrade = false
                 global.purchasedSymbols = []
             }).catch(err => {
                 global.inTrade = false
                 console.log('selling error', err, amount, pricedFixed, sellAsset)
-            })
+            }))
 
         }
 

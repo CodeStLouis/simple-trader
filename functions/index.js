@@ -244,7 +244,7 @@ setInterval(function() {
          )
          }
      }
-}, 30000)
+}, 15000)
 
 async function getCandlesLastTick(c){
     let useAbleSymbol = c + 'USD'
@@ -301,6 +301,7 @@ async function getCandlesLastTick(c){
                                     //TODO turn on stream and sell something
                                     const stream = new streamBitstampService()
                                     global.tradeData.symbolInTrade = s.asset
+                                    console.log('purchase symbols before turning on order book', global.purchasedSymbols)
                                     stream.turnOnOrderBook(s.asset, orderType, s.quantity, close)
                                 }
                         }
