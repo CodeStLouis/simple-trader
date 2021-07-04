@@ -1,6 +1,7 @@
 const {BitstampStream, Bitstamp, CURRENCY} = require("node-bitstamp");
 const { $, gt } = require('moneysafe');
 const { $$, subtractPercent, addPercent } = require('moneysafe/ledger');
+const streamBitstampService = require('./bitstamp-stream')
 const Bottleneck = require("bottleneck");
 const key = "08n2v39ePpdjEEXNVqlbr0RZf6TYIjDU";
 const secret = "UNskrLDTqV34RxzzJG5nlolK982f7nuV";
@@ -100,11 +101,14 @@ class bitstampTrader {
             return await limiter.schedule(() => orderBitstamp.buyLimitOrder(quantityFixed, global.tradeData.price, asset, null, false).then(resp => {
                 console.log(asset, 'BOUGHT from the lowest asker!!!', resp)
                 global.inTrade = false
+                const stream = new streamBitstampService()
+
                 global.purchasedSymbols.push({asset: asset, quantity: quantityFixed, price: price})
+              //  return stream.disconnectOrderBook()
             }).catch(err => {
                 this.getBitstampBuyingPower().then(p =>{
                 global.buyingPower = p
-                console.log('line 80 in trader error,  wrong buying power, re-adjust buying power', global.buyingPower)
+                console.log('line 111 in trader error,  wrong buying power, re-adjust buying power', global.buyingPower)
                 console.log('buy error params', err, quantityFixed, price, asset, false)
 
             })
@@ -123,10 +127,13 @@ class bitstampTrader {
                 console.log(resp, 'SOLD!!', currency)
                 global.inTrade = false
                 global.purchasedSymbols = []
-                let
-                this.getBitstampBalance(currency)
+                const stream = new streamBitstampService()
+                let balanceSymbol = currency.replace('usd', '')
+                this.getBitstampBalance(balanceSymbol)
+                //stream.disconnectOrderBook()
             }).catch(err => {
-                this.getBitstampBalance(currency)
+                let balanceSymbol = currency.replace('usd', '')
+                this.getBitstampBalance(balanceSymbol)
                 global.inTrade = false
                 console.log('selling error', err, amount, pricedFixed, sellAsset)
             }))

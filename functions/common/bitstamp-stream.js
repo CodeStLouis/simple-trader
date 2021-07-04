@@ -86,7 +86,11 @@ turnOffTradeStream = () =>{
     bitstampStream.on("disconnected", () => {});
     bitstampStream.on("error", (e) => console.error(e));
 }
-
+    async disconnectOrderBook(){
+        const bitstampStream = new BitstampStream();
+        bitstampStream.on("disconnected", () => {});
+        bitstampStream.close()
+    }
 }
 
 module.exports = bitstampStreamService

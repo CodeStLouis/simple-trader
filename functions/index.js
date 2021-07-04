@@ -205,7 +205,7 @@ setInterval(function() {
     getBitstampBuyingPower().then(resp =>{
         console.log('first buying power call line 203 for bitstamp')
     })
-    console.log('NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
+    console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
     if(global.inTrade === true){
         getBitstampBuyingPower().then(p =>{
         const orderBook = new streamBitstampService()
@@ -220,6 +220,12 @@ setInterval(function() {
             })
         })
     })
+    }
+    if(global.inTrade === false){
+        const orderBook = new streamBitstampService()
+        orderBook.disconnectOrderBook().then(resp =>{
+            console.log('turned off order book')
+        })
     }
     cancelAllOrders().then(b =>{
         global.inTrade = false
@@ -236,7 +242,7 @@ setInterval(function() {
     }
      for(let c of crypto) {
          if(global.inTrade === false){
-             getSMATwentyFive(c, '5m').then()
+           //  getSMATwentyFive(c, '5m').then()
              getCandlesLastTick(c).then(resp =>{
                  //console.log('response from candles', resp)
              }
