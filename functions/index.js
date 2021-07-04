@@ -62,7 +62,7 @@ const binanceAssets = [
     'WAVES'
 ]
 const intervals = ['5m']
-
+const fetch = require('node-fetch');
 const events = require("events");
 const trader = require("./common/bitstamp-trader"); // new
 const ema = require('trading-indicator').ema
@@ -229,7 +229,23 @@ setInterval(function() {
     }
     cancelAllOrders().then(b =>{
         global.inTrade = false
-        console.log('canceled orders')
+        return new Promise (function (fulfill, reject) {
+            if (err) reject (err);
+            else{
+                fetch('https://www.bitstamp.net/api/v2/cancel_all_orders/',
+                    { method: 'post',
+                        headers: {'Content-Type': 'application/json'
+                        }
+
+                    }).then(res =>{
+                    console.log('canceling dangling orders', res.json())
+                }).catch(err =>{
+                    console.log('cancel order err', err)
+                })
+                return fulfill
+            }
+
+    })
     })
     if(smaFiveAboveNine.length > 10){
         smaFiveAboveNine = []
