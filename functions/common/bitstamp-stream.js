@@ -146,6 +146,10 @@ turnOffTradeStream = () =>{
                                 console.log('err when selling in stream', err,amountNumb, limit_price, newTradeSymbol, null, false)
                                 return orderBitstamp.sellLimitOrder(numberAmount, limit_price, newTradeSymbol, null, false ).then(resp =>{
                                     console.log('err trying to sell again after new balance', err,amountNumb, limit_price, newTradeSymbol, null, false)
+                                    global.tradeData.symbolInTrade = 'fredrick'
+                                    global.tradeData.price = 0
+                                    global.tradeData.amount = 0
+                                    global.tradeData.daily_order = false
                                     global.inTrade = false
                                     this.disconnectOrderBook()
                                 })
@@ -203,9 +207,17 @@ turnOffTradeStream = () =>{
                         let tradeSymbol = symbolUsd.toLowerCase()
                         console.log(err, 'Spot trade new quantity line 198', amount , newPrice, tradeSymbol, null, false)
                         return orderBitstamp.buyLimitOrder(amount , newPrice, tradeSymbol, null, false).then(resp =>{
+                            global.tradeData.symbolInTrade = 'fredrick'
+                            global.tradeData.price = 0
+                            global.tradeData.amount = 0
+                            global.tradeData.daily_order = false
                             global.inTrade = false
                             this.disconnectOrderBook()
                         }).catch(err =>{
+                            global.tradeData.symbolInTrade = 'fredrick'
+                            global.tradeData.price = 0
+                            global.tradeData.amount = 0
+                            global.tradeData.daily_order = false
                             global.inTrade = false
                             let quantity = $(newQuantity).toNumber()
                             console.log('error when buying in stream after catch err lin 206', err, amount, newPrice, tradeSymbol, null, false)
@@ -214,7 +226,7 @@ turnOffTradeStream = () =>{
                     })
                 })
                 } else {
-                retu
+                return 'trade done'
             }
         });
     });
