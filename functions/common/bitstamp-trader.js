@@ -122,8 +122,8 @@ class bitstampTrader {
         if (amount > 0 && global.inTrade === true) {
             let pricedFixed = $(price).toNumber()
             let sellAsset = currency.toLowerCase()
-            console.log('selling', amount, pricedFixed, sellAsset, null, false)
-            return  await limiter.schedule(() =>  orderBitstamp.sellLimitOrder(amount, pricedFixed, sellAsset, null, false).then(resp => {
+            console.log('selling', amount, pricedFixed, currency, null, false)
+            return  await limiter.schedule(() =>  orderBitstamp.sellLimitOrder(amount, pricedFixed, currency, null, false).then(resp => {
                 console.log(resp, 'SOLD!!', currency)
                 global.inTrade = false
                 global.purchasedSymbols = []
