@@ -180,17 +180,17 @@ turnOffTradeStream = () =>{
             if(orderType === 'buy' && global.inTrade === true){
             let lastAsk_tick = data.asks.length -1
             let convertedLowestAskQty = $.of(data.asks[lastAsk_tick][1]).valueOf()
-            console.log('in trade in order book? line 177', global.inTrade, 'trade data', global.tradeData)
+            console.log('in trade in order book? line 183', global.inTrade, 'trade data', global.tradeData)
            let testPrice = $.of(data.asks[0][0]).valueOf()
-                console.log('test price from order book line 184', testPrice)
+                console.log('test price from order book line 185', testPrice)
             let buyAmount = global.buyingPower / global.tradeData.price
             let amountNumber = $(buyAmount).toNumber();
             let eightyPercentOfBuyingPower = +$$(
                 $(amountNumber),
                 subtractPercent(20)
             ).toNumber()
-                console.log(global.tradeData.symbolInTrade, 'Trade amount=', Number((global.tradeData.amount).toFixed(6)) , Number((global.tradeData.amount).toFixed(6)))
-                let quantity = Number((global.tradeData.amount).toFixed(6))
+                console.log(global.tradeData.symbolInTrade, 'Trade amount 80%=', eightyPercentOfBuyingPower.toFixed(6) )
+                let quantity = $(eightyPercentOfBuyingPower).toNumber().toFixed(6)
                // let quantityNum = quantity.toNumber()
                 let tradeSymbolAllLowercase = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
                 let price = global.tradeData.price
@@ -203,9 +203,10 @@ turnOffTradeStream = () =>{
                 }).catch(err => {
                     this.getBitstampBuyingPower().then(p =>{
                         console.log('getting buying and global trade data after failed buy limit', p, global.tradeData)
+                        orderBitstamp.cancelOrdersAll()
                         let buyingPower = $(p).toNumber()
                         let newQuantity = buyingPower / global.tradeData.price
-                        let amount = Number((newQuantity).toFixed(6))
+                        let amount = Number((newQuantity).toFixed(6)) - 0.00200
                         let symbol = global.tradeData.symbolInTrade
                         let symbolUsd = symbol + 'usd'
                         let newPrice = Number((global.tradeData.price).toFixed(2))
