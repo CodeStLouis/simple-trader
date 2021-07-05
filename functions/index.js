@@ -9,6 +9,8 @@ const functions = require("firebase-functions");
 // });
 const admin = require('firebase-admin');
 const express = require("express");
+require('dotenv').config()
+const dotenv = require('dotenv')
 const app = express();
 const { $, gt } = require('moneysafe');
 const { $$, subtractPercent, addPercent } = require('moneysafe/ledger');
@@ -30,9 +32,9 @@ const binanceUS = new Binanceus().options({
 });
 
 const {BitstampStream, Bitstamp, CURRENCY} = require("node-bitstamp");
-const key = "057BuyrqfEknuBvM6vxvNB91XUDQrqrg";
-const secret = "1bAuC8n9kjfjjS7l4JT3X2B0KNKaAcDC";
-const clientId = "fele2065";
+const key = process.env.key;
+const secret = process.env.secret;
+const clientId = process.env.clientId
 const bitstamp = new Bitstamp({
     key,
     secret,
@@ -61,7 +63,7 @@ const binanceAssets = [
     'SOL',
     'WAVES'
 ]
-const intervals = ['5m']
+const intervals = ['15m']
 const fetch = require('node-fetch');
 const events = require("events");
 const trader = require("./common/bitstamp-trader"); // new
@@ -126,7 +128,8 @@ global.tradeData ={
     amount: {},
     price: {},
     daily_order: false,
-    orderType: {}
+    orderType: {},
+    isConsolidated : false
 }
 async function getBuyingPowerOnBinance(){
     await binanceUS.balance((error, balances) =>{
@@ -152,6 +155,20 @@ async function getAssetBalanceOnBinance(asset){
         return JSON.stringify(obj.available)
 
     })
+}
+async function isConsolidated(asset){
+    // if sma 5 is less than nine its consolidated = true
+    await getSMAFive(asset, '15m').then(sma5 =>{
+       getSMANine(asset, '15m').then(sma9 =>{
+           if (sma5 < sma9){
+               console.log('is consolidated not a break out candles', global.tradeData.isConslidated = true)
+               global.tradeData.isConslidated = true
+               return global.tradeData.isConslidated
+           }
+       })
+
+    })
+
 }
 async function getBitstampBalance(assetSymbol){
     let assetToLowercase = assetSymbol.toLowerCase()
@@ -211,12 +228,29 @@ setInterval(function() {
         const orderBook = new streamBitstampService()
         let orderType = global.tradeData.orderType
         let symbol = global.tradeData.symbolInTrade
+        let amount = global.tradeData.amount
+        let price = global.tradeData.price
+            if(global.tradeData.isConslidated === true){
+                orderBook.turnOnOrderBook(symbol, orderType, amount, price).then(resp =>{
+                    console.log('fredrick restart in trade', symbol, orderType, amount, price)
+                })
+            } else {
+                console.log(symbol, 'in consolidation', global.tradeData)
+                return 'in '
+            }
+
         getBitstampBalance(symbol).then(q => {
             //TURN ON LIVE ORDER BOOK
-            let sellAmount = q.assetQuantity
-            orderBook.turnOnOrderBook(symbol, orderType, sellAmount, null).then(trade => {
-                console.log('in trade method asset', symbol)
-
+            isConsolidated(symbol).then(resp =>{
+                if(global.tradeData.isConslidated === false) {
+                    for(let q of crypto){
+                        console.log('is consolidated should we turn on order book?',q, global.tradeData)
+                    }
+            }
+                /* let sellAmount = q.assetQuantity
+                orderBook.turnOnOrderBook(symbol, orderType, sellAmount, null).then(trade => {
+                    console.log('in trade method asset', symbol)
+            })*/
             })
         })
     })
@@ -227,12 +261,12 @@ setInterval(function() {
             console.log('turned off order book')
         })
     }
-    cancelAllOrders().then(b =>{
+   /* cancelAllOrders().then(b =>{
         global.inTrade = false
         return new Promise (function (fulfill, reject) {
             if (err) reject (err);
             else{
-                fetch('https://www.bitstamp.net/api/v2/cancel_all_orders/',
+                fetch('https://www.bitstamp.net/api/v2/cancel_all_orders',
                     { method: 'post',
                         headers: {'Content-Type': 'application/json'
                         }
@@ -246,7 +280,7 @@ setInterval(function() {
             }
 
     })
-    })
+    })*/
     if(smaFiveAboveNine.length > 10){
         smaFiveAboveNine = []
     }
@@ -266,7 +300,7 @@ setInterval(function() {
          )
          }
      }
-}, 15000)
+}, 60000)
 
 async function getCandlesLastTick(c){
     let useAbleSymbol = c + 'USD'
@@ -319,7 +353,7 @@ async function getCandlesLastTick(c){
                                     console.log(c, 'trying to sell', s.asset, s.quantity, close)
                                     global.inTrade = true
                                     let orderType = global.tradeData.orderType = 'sell'
-                                    global.tradeData.price = close
+
                                     //TODO turn on stream and sell something
                                     const stream = new streamBitstampService()
                                     global.tradeData.symbolInTrade = s.asset
