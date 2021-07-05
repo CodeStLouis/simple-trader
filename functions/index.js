@@ -51,7 +51,6 @@ const crypto = [
     'ETH',
     'LINK',
     'LTC',
-    'OMG',
 
 ]
 const binanceAssets = [
@@ -206,7 +205,14 @@ async function getBitstampBuyingPower(){
 }
 async function cancelAllOrders(){
     global.inTrade = false
-    await bitstamp.cancelOrdersAll();
+  let ordersCanceled = await bitstamp.cancelOrdersAll();
+    console.log('canceled orders', ordersCanceled)
+    return ordersCanceled
+}
+async function getOpenOrders(){
+    let openOrders = await bitstamp.openOrdersAll()
+    console.log(openOrders)
+    return openOrders
 }
 let smaFiveAboveNine = []
 setInterval(function() {
@@ -221,6 +227,9 @@ setInterval(function() {
     }
     getBitstampBuyingPower().then(resp =>{
         console.log('first buying power call line 203 for bitstamp')
+    })
+    getOpenOrders().then(open =>{
+        console.log('open orders', open)
     })
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
     if(global.inTrade === true){
@@ -261,26 +270,10 @@ setInterval(function() {
             console.log('turned off order book')
         })
     }
-   /* cancelAllOrders().then(b =>{
+    cancelAllOrders().then(b =>{
         global.inTrade = false
-        return new Promise (function (fulfill, reject) {
-            if (err) reject (err);
-            else{
-                fetch('https://www.bitstamp.net/api/v2/cancel_all_orders',
-                    { method: 'post',
-                        headers: {'Content-Type': 'application/json'
-                        }
-
-                    }).then(res =>{
-                    console.log('canceling dangling orders', res.json())
-                }).catch(err =>{
-                    console.log('cancel order err', err)
-                })
-                return fulfill
-            }
-
     })
-    })*/
+
     if(smaFiveAboveNine.length > 10){
         smaFiveAboveNine = []
     }
