@@ -239,8 +239,11 @@ setInterval(function() {
     if (global.assetQuantities.length === 0){
         for(let i of crypto){
             getBitstampBalance(i).then(b=>{
+
                 balanceArray.push(b)
                 console.log(b.assetQuantity, 'new balance for', i)
+            }).catch(err =>{
+                console.log('the bew randomn error that has never  happened before ', err)
             })
 
         }
@@ -251,9 +254,6 @@ setInterval(function() {
     })
     getOpenOrders().then(open =>{
        // console.log('open orders', open)
-    })
-    getAllBitstampBalances().then(b =>{
-        //console.log('balance call in interval', b)
     })
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
         if(global.inTrade === true && tradeData.orderType === 'buy' && global.tradeData.haseTradedThisInterval === false){
@@ -268,6 +268,8 @@ setInterval(function() {
                 })
                 orderBook.turnOnOrderBook(symbol, orderType , orderAmount, 0).then(resp =>{
                     console.log('fredrick restart in trade', symbol, orderType, orderAmount, price)
+                }).catch(err =>{
+                    console.log('sudden error when turning on order book', err)
                 })
             })
         }
@@ -281,6 +283,8 @@ setInterval(function() {
                 let price = 0
                 orderBook.turnOnOrderBook(symbol, orderType, orderAmount, price).then(resp =>{
                     console.log('fredrick restart in trade', symbol, orderType, orderAmount, price)
+                }).catch(err =>{
+                    console.log('sudden error when turning on order book', err)
                 })
             })
         }
@@ -343,7 +347,7 @@ async function getCandlesLastTick(c){
                         global.tradeData.lastClose = close
                         let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
                         console.log('amount in buy sma greater than close line 328', amount)
-                        return stream.turnOnOrderBook(c, orderType, amount, close )
+                        return stream.turnOnOrderBook(c, orderType, amount, 0 )
 
                     }
 
@@ -351,26 +355,18 @@ async function getCandlesLastTick(c){
                 }
             })
             getSMANine(c, i).then(smaNineData => {
-                console.log(c, '9', smaNineData, 'close', close)
+                console.log(c, '9', smaNineData, 'close', close, 'global buying power', global.buyingPower)
                 if (smaNineData < close ) {
-
                     if (global.buyingPower < 20) {
-                        // start live order book
-                        const noBuyingPower = 'no buying power'
-                        return noBuyingPower
-                    } else {
                         console.log(c, 'sma 9 lower than close, ', i, ' if you have buying power',global.buyingPower, ' and volume is there volume=', volume)
                         global.inTrade = true
                         const stream = new streamBitstampService()
                         let orderType = global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
-                        global.tradeData.close = close
-                        if(global.tradeData.close === close){
-                            global.tradeData.haseTradedThisInterval = true
-                        }
+                        global.tradeData.lastClose = close
                         let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
-                         return stream.turnOnOrderBook(c, orderType, amount, close).then(b =>{
-                             console.log('turned on order book in candles to place buy', c, orderType, amount, close)
+                         return stream.turnOnOrderBook(c, orderType, amount, 0).then(b =>{
+                             console.log('turned on order book in candles to place buy', c, orderType, amount, 0)
                          })
 
                     }
@@ -382,28 +378,25 @@ async function getCandlesLastTick(c){
                 console.log(c, '5', smaFiveData, 'close =', close, 'at interval', i)
                 let sellAsset = (smaFiveData > close)
                 if (sellAsset === true) {
-                    // do we own it
-                    getBitstampBalance(c).then(b =>{
-                        if(b !== undefined){
-                            console.log(c, 'balance in sma 5 sell asset', b)
-                            console.log(c, 'sma 5 greater than close', close, 'at', i, ' sell if you own it')
-                            if(b.assetQuantity > 0){
-                                global.tradeData.symbolInTrade = c
-                                global.tradeData.lastClose = close
-                                let orderType = global.tradeData.lastClose = 'sell'
-                                const stream = new streamBitstampService()
-                                stream.turnOnOrderBook(c, orderType, b.assetQuantity, 0)
-                            }
-                            } else {
-                                    console.log(c, 'dont own it')
-                                    return 'dont own it'
-                                }
-                            })
+                    // do we own it?
+                    console.log(c, 'balance in sma 5 sell asset', global.assetQuantities)
+                    console.log(c, 'sma 5 greater than close', close, 'at', i, ' sell if you own it')
+                    for(let a of global.assetQuantities){
+                        if(c === a.asset) {
+                            global.tradeData.amount = a.assetQuantity
+                            global.tradeData.symbolInTrade = c
+                            global.tradeData.lastClose = close
+                            let orderType = global.tradeData.orderType = 'sell'
+                            const stream = new streamBitstampService()
+                            stream.turnOnOrderBook(c, orderType, a.assetQuantity, 0)
+                        }
+
+                    }
                 }
 
             })
 
-        }, {limit: 1000, endTime: rawUtcTimeNow}));
+        }, {limit: 500, endTime: rawUtcTimeNow}));
     }
 }
 

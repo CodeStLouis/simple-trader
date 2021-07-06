@@ -72,7 +72,7 @@ turnOffTradeStream = () =>{
     async getBitstampBuyingPower(){
         const balance = await limiter.schedule(() => orderBitstamp.balance().then(({body:data}) => data));
         const UsdBalance = balance.usd_balance
-        global.buyingPower = UsdBalance
+        global.buyingPower = $(UsdBalance).toNumber()
         console.log('getting buying power', UsdBalance, global.buyingPower)
         return UsdBalance
     }
@@ -100,40 +100,44 @@ turnOffTradeStream = () =>{
     }*/
  async turnOnOrderBook(symbol, orderType, amount, price){
     global.inTrade = true
-    console.log('symbol=', symbol,  'order type=',orderType, 'buying power=', global.buyingPower, 'price=', price)
+    console.log(
+        'symbol=', symbol,
+        'order type=',orderType,
+        'amount', amount,
+        'buying power=',
+        global.buyingPower,
+        'price=', price,
+        'global trade data', global.tradeData
+    )
      global.tradeData.symbolInTrade = symbol
      global.tradeData.orderType = orderType
    //  global.tradeData.amount = global.buyingPower / price
     let tradingSymbol = symbol + 'usd'
-    let streamingSymbol = global.tradeData.symbolInTrade + '_USD'
+    let streamingSymbol = symbol + '_USD'
+     console.log('streaming symbol', streamingSymbol)
     const bitstampStream = new BitstampStream();
-    const trader = new bitStampTrader()
-     let priceToNumb = $(price).toNumber()
-     if(orderType === 'sell' && symbol === global.assetQuantities.asset){
-         global.tradeData.amount = global.assetQuantities.quantity
-     }
-     let longAmount = global.buyingPower / priceToNumb
-     global.tradeData.amount = longAmount.toFixed(6)
-     console.log('price converted', priceToNumb);
-    bitstampStream.on("connected", () => {
-        const btcEurOrderBookChannel = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamingSymbol}`]);
+        bitstampStream.on("connected", () => {
+        const btcEurOrderBookChannel = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY.LINK_USD);
         bitstampStream.on(btcEurOrderBookChannel, ({ data, event }) => {
             console.log(streamingSymbol, 'in order book', global.tradeData);
             //todo when selling, sell to highest bids first
             let convertedHighestBidQty = $.of(data.bids[0][1]).valueOf()
             if(convertedHighestBidQty >= 1){
                 // sell to highest bid
-                if (orderType === 'sell' && global.inTrade !== false && streamingSymbol === global.tradeData.symbolInTrade + '_USD'){
+                let globalStreamSymbol = global.tradeData.symbolInTrade + '_USD'
+                console.log('stream symbol and global symbol', globalStreamSymbol, streamingSymbol)
+                if (orderType === 'sell' && global.inTrade !== false && streamingSymbol === globalStreamSymbol){
                     // todo add min order!!!!!!!!!!!!!!!!!!!!!
                     let limit_price = $.of(data.bids[0][0]).toNumber()
                     let amountNumb = $(amount).toNumber()
                    // global.tradeData.price = $.of(data.bids[0][0]).valueOf()
                    // let price = $.of(data.bids[0][0]).valueOf()
-                  console.log(symbol, 'sell limit order in stream no limiter line 141', amountNumb, limit_price, symbol, null, false)
+                  console.log(symbol, 'sell limit order in stream no limiter line 141', amountNumb, limit_price, tradingSymbol, null, false)
                     return orderBitstamp.sellLimitOrder(amountNumb, limit_price, tradingSymbol, null, false).then(resp =>{
                        console.log(resp.body, 'Sold!!!!! line 132',amountNumb, limit_price, symbol, null, false)
                         global.inTrade = false
                         global.tradeData.haseTradedThisInterval = true
+                        }).then(d=>{
                         this.disconnectOrderBook().then(sold =>{
                             console.log('disconnected order book after sell placed stream line 146')
                         })
@@ -144,7 +148,7 @@ turnOffTradeStream = () =>{
                         this.getBitstampBalance(symbol).then(b =>{
                             let numberAmount = $(b).toNumber()
                             if (numberAmount > 0){
-                                console.log('err when selling in stream line 155', err ,numberAmount, limit_price, newTradeSymbol, null, false)
+                                console.log('err when selling in stream line 1542', err ,numberAmount, limit_price, newTradeSymbol, null, false)
                                 return orderBitstamp.sellLimitOrder(numberAmount, limit_price, newTradeSymbol, null, false ).then(resp =>{
                                     console.log(resp.body, 'err trying to sell again after new balance', err,amountNumb, limit_price, newTradeSymbol, null, false)
                                     global.inTrade = false
@@ -208,13 +212,15 @@ turnOffTradeStream = () =>{
                             let symbolUsd = symbol + 'usd'
                             let newPrice = Number((global.tradeData.price).toFixed(2))
                             let tradeSymbol = symbolUsd.toLowerCase()
-                            console.log(err, 'Spot trade new quantity line 216', lesserAmount, newPrice, tradeSymbol, null, false)
+                            console.log(err, 'Spot trade new quantity line 206', lesserAmount, newPrice, tradeSymbol, null, false)
                             return orderBitstamp.buyLimitOrder(lesserAmount, newPrice, tradeSymbol, null, false).then(resp => {
-                                console.log('second attempt to buy response line 214', resp.body)
+                                console.log('second attempt to buy response line 209', resp.body)
                                 global.inTrade = false
+                                global.tradeData.haseTradedThisInterval = true
+                            }).then(stop =>{
                                 this.disconnectOrderBook()
                             }).catch(err => {
-                                console.log('third attempt to buy response line 222', err)
+                                console.log('third attempt to buy response line 214', err)
                                 this.getBitstampBuyingPower().finally(buy => {
                                     let symbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
                                     return orderBitstamp.buyLimitOrder(global.tradeData.amount, global.tradeData.price, symbol, null, false).then(resp => {
@@ -222,7 +228,7 @@ turnOffTradeStream = () =>{
                                     }).finally(resp => {
                                         let symbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
                                         return orderBitstamp.buyLimitOrder(global.tradeData.amount, global.tradeData.price, symbol, null, false).then(resp => {
-                                            console.log('last attempt to buy', resp.body)
+                                            console.log('last attempt to buy 22', resp.body)
                                         }).then(d =>{
                                             this.disconnectOrderBook()
                                         })
@@ -238,7 +244,6 @@ turnOffTradeStream = () =>{
             }
         });
     });
-    bitstampStream.on("disconnected", () => {});
     bitstampStream.on("error", (e) => console.error(e));
 }
     async disconnectOrderBook(){

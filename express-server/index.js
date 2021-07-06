@@ -148,7 +148,7 @@ async function scanMarket(){
         //getAssetsOwned(binanceSymbol).then()
         limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker)=>{
             if ( error ) console.error(error);
-            binanceUS.candlesticks(`${binanceSymbol}`, "5m", (error, ticks, symbol) => {
+            binanceUS.websockets.candlesticks(`${binanceSymbol}`, "5m", function (error, ticks, symbol) {
                 // console.info("candlesticks()", ticks);
                 let last_tick = ticks[ticks.length - 1];
                 let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
