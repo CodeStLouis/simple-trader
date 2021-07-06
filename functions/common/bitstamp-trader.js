@@ -41,8 +41,8 @@ class bitstampTrader {
         if (assetGreaterThanZero) {
             //  console.log('asset greater than 0', assetSymbol)
             global.balance = assetConvertedAmount
-            global.purchasedSymbols.push({asset: assetSymbol, qty: assetConvertedAmount})
-            console.log('owned assets', global.purchasedSymbols)
+            global.assetQuantities.push({asset: assetSymbol, qty: assetConvertedAmount})
+            console.log('owned assets', global.assetQuantities)
             // const ticker = await bitstamp.ticker(CURRENCY.XLM_USD).then(({status, headers, body}) => console.log('ticker body', body));
             return assetConvertedAmount
         } else {
@@ -70,8 +70,8 @@ class bitstampTrader {
         // console.debug('I have ', assetInAvailableFormat, assetGreaterThanZero, 'or usd amount', buyingPower)
         if (assetGreaterThanZero){
             //  console.log('asset greater than 0', assetSymbol)
-            global.purchasedSymbols.push({asset: assetSymbol, quantity: assetConvertedAmount })
-            console.log('global variables assigned', global.purchasedSymbols)
+            global.assetQuantities.push({asset: assetSymbol, quantity: assetConvertedAmount })
+            console.log('global variables assigned', global.assetQuantities)
             // const ticker = await bitstamp.ticker(CURRENCY.XLM_USD).then(({status, headers, body}) => console.log('ticker body', body));
             if(assetGreaterThanZero){
                 return {asset: assetSymbol,  assetQuantity: assetConvertedAmount}
@@ -103,7 +103,7 @@ class bitstampTrader {
                 global.inTrade = false
                 const stream = new streamBitstampService()
 
-                global.purchasedSymbols.push({asset: asset, quantity: quantityFixed, price: price})
+                global.assetQuantities.push({asset: asset, quantity: quantityFixed, price: price})
               //  return stream.disconnectOrderBook()
             }).catch(err => {
                 this.getBitstampBuyingPower().then(p =>{

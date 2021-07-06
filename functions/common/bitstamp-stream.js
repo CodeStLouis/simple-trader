@@ -55,8 +55,8 @@ turnOffTradeStream = () =>{
         // console.debug('I have ', assetInAvailableFormat, assetGreaterThanZero, 'or usd amount', buyingPower)
         if (assetGreaterThanZero){
             //  console.log('asset greater than 0', assetSymbol)
-            global.purchasedSymbols.push({asset: assetSymbol, quantity: assetConvertedAmount })
-            console.log('global variables assigned', global.purchasedSymbols)
+            global.assetQuantities.push({asset: assetSymbol, quantity: assetConvertedAmount })
+            console.log('global variables assigned', global.assetQuantities)
             // const ticker = await bitstamp.ticker(CURRENCY.XLM_USD).then(({status, headers, body}) => console.log('ticker body', body));
             if(assetGreaterThanZero){
                 return {asset: assetSymbol,  assetQuantity: assetConvertedAmount}
@@ -116,9 +116,9 @@ turnOffTradeStream = () =>{
     const bitstampStream = new BitstampStream();
     const trader = new bitStampTrader()
      let priceToNumb = $(price).toNumber()
-     global.tradeData.price = priceToNumb
-     if(orderType === 'sell' && symbol === global.purchasedSymbols.asset){
-         global.tradeData.amount = global.purchasedSymbols.quantity
+
+     if(orderType === 'sell' && symbol === global.assetQuantities.asset){
+         global.tradeData.amount = global.assetQuantities.quantity
      }
      let longAmount = global.buyingPower / priceToNumb
      global.tradeData.amount = longAmount.toFixed(6)
@@ -131,7 +131,8 @@ turnOffTradeStream = () =>{
             let convertedHighestBidQty = $.of(data.bids[0][1]).valueOf()
             if(convertedHighestBidQty >= 1){
                 // sell to highest bid
-                if (orderType === 'sell' && global.inTrade !== false){
+
+                if (orderType === 'sell' && global.inTrade !== false && streamingSymbol){
                     // todo add min order!!!!!!!!!!!!!!!!!!!!!
                     let limit_price = $.of(data.bids[0][0]).toNumber()
                     let amountNumb = $(amount).toNumber()
@@ -171,26 +172,26 @@ turnOffTradeStream = () =>{
                     return 'trade over'
                 }
                 //TODO make sure we are actually getting highest bid
-
-                // console.log('bid is greater')
-               // console.log('converted bid highest', convertedHighestBidQty)
-              // console.log(data.bids[0],'HIGHEST or last tick BIDS == last tick qty = one highest?',  data.bids[last_tick])
-             // console.log('HIGHEST bid', data.bids[last_tick])
+             /*   if ("highest bid or as"){
+                    // console.log('bid is greater')
+                    // console.log('converted bid highest', convertedHighestBidQty)
+                    // console.log(data.bids[0],'HIGHEST or last tick BIDS == last tick qty = one highest?',  data.bids[last_tick])
+                    // console.log('HIGHEST bid', data.bids[last_tick])
+                }*/
             }
             //TODO when buying, get smallest asks first
             if(orderType === 'buy' && global.inTrade === true){
             let lastAsk_tick = data.asks.length -1
             let convertedLowestAskQty = $.of(data.asks[lastAsk_tick][1]).valueOf()
             console.log('in trade in order book? line 183', global.inTrade, 'trade data', global.tradeData)
-           let testPrice = $.of(data.asks[0][0]).valueOf()
-                console.log('test price from order book line 185', testPrice)
+            let testPrice = $.of(data.asks[0][0]).valueOf()
+            console.log('test price from order book line 185', testPrice)
             let buyAmount = global.buyingPower / global.tradeData.price
             let amountNumber = $(buyAmount).toNumber();
             let eightyPercentOfBuyingPower = +$$(
                 $(amountNumber),
-                subtractPercent(20)
-            ).toNumber().toFixed(6)
-                console.log(global.tradeData.symbolInTrade, 'Trade amount 80%=', eightyPercentOfBuyingPower)
+                subtractPercent(20)).toNumber().toFixed(6)
+                console.log(global.tradeData.symbolInTrade, 'Trade amount 80% =', eightyPercentOfBuyingPower)
                 let quantity = eightyPercentOfBuyingPower
                // let quantityNum = quantity.toNumber()
                 let tradeSymbolAllLowercase = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
@@ -205,14 +206,14 @@ turnOffTradeStream = () =>{
                 }).catch(err => {
                     this.getBitstampBuyingPower().then(p =>{
                         if ($(p).toNumber() > 0){
-                            console.log('getting buying and global trade data after failed buy limit', p, global.tradeData)
+                            console.log('getting buying and global trade data after failed buy limit buy', p, global.tradeData)
                             orderBitstamp.cancelOrdersAll()
                             let buyingPower = $(p).toNumber()
-
                             let newQuantity = buyingPower / global.tradeData.price
                             let amount = Number((newQuantity).toFixed(6))
-                            let lesserAmount = +$$($(amount),
-                                subtractPercent(10).toNumber())
+                            let lesserAmount = +$$(
+                                $(amount),
+                            subtractPercent(10)).toNumber()
                             let symbol = global.tradeData.symbolInTrade
                             let symbolUsd = symbol + 'usd'
                             let newPrice = Number((global.tradeData.price).toFixed(2))
