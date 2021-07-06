@@ -313,7 +313,7 @@ setInterval(function() {
          )
          }
      }
-}, 30000)
+}, 45000)
 
 async function getCandlesLastTick(c){
     let useAbleSymbol = c + 'USD'
