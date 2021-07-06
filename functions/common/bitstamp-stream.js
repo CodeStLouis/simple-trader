@@ -99,12 +99,6 @@ turnOffTradeStream = () =>{
         }
     }*/
  async turnOnOrderBook(symbol, orderType, amount, price){
-     if(global.tradeData.symbolInTrade === 'fredrick'){
-         return this.disconnectOrderBook().then(fred =>{
-             console.log('dont sell fredrick')
-             global.inTrade = false
-         })
-     }
     global.inTrade = true
     console.log('symbol=', symbol,  'order type=',orderType, 'buying power=', global.buyingPower, 'price=', price)
      global.tradeData.symbolInTrade = symbol
@@ -124,7 +118,7 @@ turnOffTradeStream = () =>{
     bitstampStream.on("connected", () => {
         const btcEurOrderBookChannel = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamingSymbol}`]);
         bitstampStream.on(btcEurOrderBookChannel, ({ data, event }) => {
-            console.log(symbol, 'in order book');
+            console.log(streamingSymbol, 'in order book', global.tradeData);
             //todo when selling, sell to highest bids first
             let convertedHighestBidQty = $.of(data.bids[0][1]).valueOf()
             if(convertedHighestBidQty >= 1){
