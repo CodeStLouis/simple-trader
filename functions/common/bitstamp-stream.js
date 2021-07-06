@@ -138,11 +138,13 @@ turnOffTradeStream = () =>{
                    // global.tradeData.price = $.of(data.bids[0][0]).valueOf()
                    // let price = $.of(data.bids[0][0]).valueOf()
                     let symbol = tradingSymbol.toLowerCase()
-                  console.log('sell limit order in stream no limiter line 133', amountNumb, limit_price, symbol, null, false)
+                  console.log('sell limit order in stream no limiter line 141', amountNumb, limit_price, symbol, null, false)
                     return orderBitstamp.sellLimitOrder(amountNumb, limit_price, symbol, null, false).then(resp =>{
                        console.log(resp.body, 'Sold!!!!! line 132',amountNumb, limit_price, symbol, null, false)
                         global.inTrade = false
-                        this.disconnectOrderBook()
+                        this.disconnectOrderBook().then(sold =>{
+                            console.log('disconnected order book after sell placed stream line 146')
+                        })
                     }).catch(err =>{
                         let symbol = global.tradeData.symbolInTrade
                         let symbolPlusUsd = symbol + 'usd'
@@ -150,10 +152,9 @@ turnOffTradeStream = () =>{
                         this.getBitstampBalance(symbol).then(b =>{
                             let numberAmount = $(b).toNumber()
                             if (numberAmount > 0){
-                                console.log('err when selling in stream line 147', err ,numberAmount, limit_price, newTradeSymbol, null, false)
+                                console.log('err when selling in stream line 155', err ,numberAmount, limit_price, newTradeSymbol, null, false)
                                 return orderBitstamp.sellLimitOrder(numberAmount, limit_price, newTradeSymbol, null, false ).then(resp =>{
                                     console.log(resp.body, 'err trying to sell again after new balance', err,amountNumb, limit_price, newTradeSymbol, null, false)
-
                                     global.inTrade = false
                                     this.disconnectOrderBook()
                                 })
@@ -188,46 +189,53 @@ turnOffTradeStream = () =>{
             let eightyPercentOfBuyingPower = +$$(
                 $(amountNumber),
                 subtractPercent(20)
-            ).toNumber()
-                console.log(global.tradeData.symbolInTrade, 'Trade amount 80%=', eightyPercentOfBuyingPower.toFixed(6) )
-                let quantity = $(eightyPercentOfBuyingPower).toNumber().toFixed(6)
+            ).toNumber().toFixed(6)
+                console.log(global.tradeData.symbolInTrade, 'Trade amount 80%=', eightyPercentOfBuyingPower)
+                let quantity = eightyPercentOfBuyingPower
                // let quantityNum = quantity.toNumber()
                 let tradeSymbolAllLowercase = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
-                let price = global.tradeData.price
-                console.log('Spot Trade buy line 187 quantity is wrong =>', quantity, price, tradeSymbolAllLowercase, null, false)
+                let price = Number(global.tradeData.price).toFixed(2)
+                console.log('Spot Trade buy line 197 quantity is wrong =>', quantity, price, tradeSymbolAllLowercase, null, false)
                 return orderBitstamp.buyLimitOrder(quantity, price, tradeSymbolAllLowercase, null, false).then(resp => {
-                    console.log(symbol, 'line 182 BOUGHT from the lowest asker!!!', price)
+                    console.log(symbol, 'line 199 placed order at $!!!', price, resp)
                     global.inTrade = false
-                    global.purchasedSymbols.push({asset: symbol, quantity: quantity, price: price})
-                    this.disconnectOrderBook()
+                    this.disconnectOrderBook().then(buy =>{
+                        console.log('disconnected order book after buy')
+                    })
                 }).catch(err => {
                     this.getBitstampBuyingPower().then(p =>{
-                        console.log('getting buying and global trade data after failed buy limit', p, global.tradeData)
-                        orderBitstamp.cancelOrdersAll()
-                        let buyingPower = $(p).toNumber()
-                        let newQuantity = buyingPower / global.tradeData.price
-                        let amount = Number((newQuantity).toFixed(6)) - 0.00200
-                        let symbol = global.tradeData.symbolInTrade
-                        let symbolUsd = symbol + 'usd'
-                        let newPrice = Number((global.tradeData.price).toFixed(2))
-                        let tradeSymbol = symbolUsd.toLowerCase()
-                        console.log(err, 'Spot trade new quantity line 212', amount , newPrice, tradeSymbol, null, false)
-                        return orderBitstamp.buyLimitOrder(amount , newPrice, tradeSymbol, null, false).then(resp =>{
-                         console.log('second attempt to buy response line 214', resp.body)
-                            global.inTrade = false
-                            this.disconnectOrderBook()
-                        }).catch(err =>{
-                            this.getBitstampBuyingPower().finally(buy =>{
-                                let symbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
-                                return orderBitstamp.buyLimitOrder(global.tradeData.amount, global.tradeData.price, symbol, null, false).then(resp =>{
-                                    console.log('last attempt to buy', resp.body)
+                        if ($(p).toNumber() > 0){
+                            console.log('getting buying and global trade data after failed buy limit', p, global.tradeData)
+                            orderBitstamp.cancelOrdersAll()
+                            let buyingPower = $(p).toNumber()
+
+                            let newQuantity = buyingPower / global.tradeData.price
+                            let amount = Number((newQuantity).toFixed(6))
+                            let lesserAmount = +$$($(amount),
+                                subtractPercent(10).toNumber())
+                            let symbol = global.tradeData.symbolInTrade
+                            let symbolUsd = symbol + 'usd'
+                            let newPrice = Number((global.tradeData.price).toFixed(2))
+                            let tradeSymbol = symbolUsd.toLowerCase()
+                            console.log(err, 'Spot trade new quantity line 216', lesserAmount , newPrice, tradeSymbol, null, false)
+                            return orderBitstamp.buyLimitOrder(lesserAmount , newPrice, tradeSymbol, null, false).then(resp =>{
+                                console.log('second attempt to buy response line 214', resp.body)
+                                global.inTrade = false
+                                this.disconnectOrderBook()
+                            }).catch(err =>{
+                                this.getBitstampBuyingPower().finally(buy =>{
+                                    let symbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
+                                    return orderBitstamp.buyLimitOrder(global.tradeData.amount, global.tradeData.price, symbol, null, false).then(resp =>{
+                                        console.log('last attempt to buy', resp.body)
+                                    })
                                 })
+                                global.inTrade = false
+                                let quantity = $(newQuantity).toNumber()
+                                console.log('error when buying in stream after catch err lin 206', err, amount, newPrice, tradeSymbol, null, false)
+                                this.disconnectOrderBook()
                             })
-                            global.inTrade = false
-                            let quantity = $(newQuantity).toNumber()
-                            console.log('error when buying in stream after catch err lin 206', err, amount, newPrice, tradeSymbol, null, false)
-                            this.disconnectOrderBook()
-                        })
+                        }
+
                     })
                 })
                 } else {

@@ -20,7 +20,7 @@ const limiter = new Bottleneck({
 
 let t = new Date
 const rawUtcTimeNow = (Math.floor(t.getTime()))
-const intervals =['5m','15m']
+const intervals =['5m']
 const assets = [
     'ETH',
     'LINK',
@@ -131,7 +131,7 @@ async function getSMAFive(s, i){
     return lastSMAFiveCandle
 }
 async function getLastCandleClosed(asset, i){
-   await binanceUS.candlesticks(`${asset}`, "15m", (error, ticks, symbol) => {
+   await binanceUS.candlesticks(`${asset}`, "5m", (error, ticks, symbol) => {
        // console.info("candlesticks()", ticks);
         let last_tick = ticks[ticks.length - 1];
         let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
@@ -148,7 +148,7 @@ async function scanMarket(){
         //getAssetsOwned(binanceSymbol).then()
         limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker)=>{
             if ( error ) console.error(error);
-            binanceUS.candlesticks(`${binanceSymbol}`, "15m", (error, ticks, symbol) => {
+            binanceUS.candlesticks(`${binanceSymbol}`, "5m", (error, ticks, symbol) => {
                 // console.info("candlesticks()", ticks);
                 let last_tick = ticks[ticks.length - 1];
                 let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;

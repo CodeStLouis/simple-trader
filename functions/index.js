@@ -62,7 +62,7 @@ const binanceAssets = [
     'SOL',
     'WAVES'
 ]
-const intervals = ['15m']
+const intervals = ['5m']
 const fetch = require('node-fetch');
 const events = require("events");
 const trader = require("./common/bitstamp-trader"); // new
@@ -77,8 +77,8 @@ const bitstampStream = new BitstampStream();
 
 const eventEmitter = new events.EventEmitter();
 const limiter = new Bottleneck({
-    maxConcurrent: 3,
-    minTime: 1000
+    maxConcurrent: 10,
+    minTime: 500
 });
 
 async function getSMANine(s, i){
@@ -220,6 +220,7 @@ async function getOpenOrders(){
 }
 let smaFiveAboveNine = []
 setInterval(function() {
+    // todo make a boolean made entry made exit this interval so wait until next candle close changes if close still equals close wait until next close
     if (global.purchasedSymbols.length === 0){
         for(let i of crypto){
             getBitstampBalance(i).then(b=>{
@@ -230,13 +231,13 @@ setInterval(function() {
 
     }
     getBitstampBuyingPower().then(resp =>{
-        console.log('first buying power call line 203 for bitstamp')
+        console.log('first buying power call line 233 for bitstamp')
     })
     getOpenOrders().then(open =>{
        // console.log('open orders', open)
     })
     getAllBitstampBalances().then(b =>{
-        console.log('balance call in interval', b)
+        //console.log('balance call in interval', b)
     })
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
     if(global.inTrade === true){
@@ -308,16 +309,16 @@ async function getCandlesLastTick(c){
             // console.info(symbol+" last close: "+close);
             //  const binanceService = new binanceGlobalInfo()
             //  binanceService.balance()
-            getSMANine(c, i).then(smaNineData => {
-                console.log(c, '9', smaNineData, 'close', close)
+            getSMATwentyFive(c, i).then(smaTwentyFiveData => {
+                console.log(c, '25', smaTwentyFiveData, 'close', close)
                 /*getSMAFive(c, i).then(smaFIVE =>{
-                    if(smaFIVE > smaNineData){
+                    if(smaFIVE > smaTwentyFiveData){
                         smaFiveAboveNine.push({symbol: c, closed: close, interval: i})
                       //  console.log('SMA 5 above Nine Assets', smaFiveAboveNine)
                     }
                 })*/
-                if (smaNineData < close ) {
-                    console.log(c, 'sma lower than close, ', i, ' if you have buying power and volume is there ', global.buyingPower, 'volume=', volume)
+                if (smaTwentyFiveData < close ) {
+                    console.log(c, 'sma 25 lower than close, ', i, ' if you have buying power and volume is there ', global.buyingPower, 'volume=', volume)
                     if (global.buyingPower > 20) {
                         // start live order book
                         global.inTrade = true
@@ -325,7 +326,35 @@ async function getCandlesLastTick(c){
                         let orderType = global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
                         let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
-                        console.log('amount in buy sma greater than close line 276', amount)
+                        console.log('amount in buy sma greater than close line 328', amount)
+                        stream.turnOnOrderBook(c, orderType, amount, close )
+                    } else {
+                        const noBuyingPower = 'no buying power'
+                        return noBuyingPower
+                    }
+
+
+                }
+            })
+            getSMANine(c, i).then(smaNineData => {
+
+                console.log(c, '9', smaNineData, 'close', close)
+                /*getSMAFive(c, i).then(smaFIVE =>{
+                    if(smaFIVE > smaTwentyFiveData){
+                        smaFiveAboveNine.push({symbol: c, closed: close, interval: i})
+                      //  console.log('SMA 5 above Nine Assets', smaFiveAboveNine)
+                    }
+                })*/
+                if (smaNineData < close ) {
+                    console.log(c, 'sma 9 lower than close, ', i, ' if you have buying power and volume is there ', global.buyingPower, 'volume=', volume)
+                    if (global.buyingPower > 20) {
+                        // start live order book
+                        global.inTrade = true
+                        const stream = new streamBitstampService()
+                        let orderType = global.tradeData.orderType = 'buy'
+                        global.tradeData.symbolInTrade = c
+                        let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
+                        console.log('amount in buy sma greater than close line 357', amount)
                         stream.turnOnOrderBook(c, orderType, amount, close )
                     } else {
                         const noBuyingPower = 'no buying power'
