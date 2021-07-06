@@ -93,6 +93,16 @@ async function resetGlobalTradeData(){
 
     }
 }
+global.tradeData = {
+    symbolInTrade: {},
+    amount: {},
+    price: {},
+    lastClose: {},
+    daily_order: false,
+    haseTradedThisInterval: false,
+    orderType: {},
+    isConsolidated: false,
+}
 async function getSMANine(s, i){
 //9 day Moving average
     let usableSymbol = s + '/USDT'
@@ -246,7 +256,7 @@ setInterval(function() {
         //console.log('balance call in interval', b)
     })
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
-        if(global.inTrade === true &&tradeData.orderType === 'buy' && global.tradeData.haseTradedThisInterval === false){
+        if(global.inTrade === true && tradeData.orderType === 'buy' && global.tradeData.haseTradedThisInterval === false){
             getBitstampBuyingPower().then(p =>{
                 let symbol = global.tradeData.symbolInTrade
                 const orderBook = new streamBitstampService()
@@ -275,12 +285,12 @@ setInterval(function() {
             })
         }
 
-    if(global.inTrade === false){
+ /*   if(global.inTrade === false){
         const orderBook = new streamBitstampService()
         orderBook.disconnectOrderBook().then(resp =>{
             console.log('turned off order book')
         })
-    }
+    }*/
     cancelAllOrders().then(b =>{
         global.inTrade = false
     })
@@ -327,7 +337,8 @@ async function getCandlesLastTick(c){
                         global.inTrade = true
                         global.tradeData.lastClose = close
                         const stream = new streamBitstampService()
-                        let orderType = global.tradeData.orderType = 'buy'
+                        let orderType = 'buy'
+                        global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
                         global.tradeData.lastClose = close
                         let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
@@ -377,10 +388,9 @@ async function getCandlesLastTick(c){
                             console.log(c, 'balance in sma 5 sell asset', b)
                             console.log(c, 'sma 5 greater than close', close, 'at', i, ' sell if you own it')
                             if(b.assetQuantity > 0){
-                                global.tradeData.orderType = 'sell'
                                 global.tradeData.symbolInTrade = c
                                 global.tradeData.lastClose = close
-                                let orderType = global.tradeData.orderType
+                                let orderType = global.tradeData.lastClose = 'sell'
                                 const stream = new streamBitstampService()
                                 stream.turnOnOrderBook(c, orderType, b.assetQuantity, 0)
                             }
