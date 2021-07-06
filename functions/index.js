@@ -246,8 +246,7 @@ setInterval(function() {
         //console.log('balance call in interval', b)
     })
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
-    if(global.inTrade === true){
-        if(global.tradeData.orderType === 'buy'){
+        if(global.inTrade === true &&tradeData.orderType === 'buy' && global.tradeData.haseTradedThisInterval === false){
             getBitstampBuyingPower().then(p =>{
                 let symbol = global.tradeData.symbolInTrade
                 const orderBook = new streamBitstampService()
@@ -262,7 +261,7 @@ setInterval(function() {
                 })
             })
         }
-        if (global.inTrade === true && global.tradeData.orderType === 'sell'){
+        if (global.inTrade === true && global.tradeData.orderType === 'sell' && global.tradeData.haseTradedThisInterval === false){
             let symbol = global.tradeData.symbolInTrade
             getBitstampBalance(symbol).then(b =>{
                 console.log(symbol ,'in restart in trade method')
@@ -275,7 +274,7 @@ setInterval(function() {
                 })
             })
         }
-    }
+
     if(global.inTrade === false){
         const orderBook = new streamBitstampService()
         orderBook.disconnectOrderBook().then(resp =>{
@@ -285,9 +284,9 @@ setInterval(function() {
     cancelAllOrders().then(b =>{
         global.inTrade = false
     })
-    resetGlobalTradeData().then(data =>{
+ /*   resetGlobalTradeData().then(data =>{
         console.log('reset trade data', global.tradeData)
-    })
+    })*/
 //todo call buying power on binance
     // reset balances
     console.log('global symbols length', global.assetQuantities.length)
@@ -326,6 +325,7 @@ async function getCandlesLastTick(c){
                     } else {
                         // start live order book
                         global.inTrade = true
+                        global.tradeData.lastClose = close
                         const stream = new streamBitstampService()
                         let orderType = global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
@@ -353,9 +353,12 @@ async function getCandlesLastTick(c){
                         const stream = new streamBitstampService()
                         let orderType = global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
-                        global.tradeData.lastClose = close
+                        global.tradeData.close = close
+                        if(global.tradeData.close === close){
+                            global.tradeData.haseTradedThisInterval = true
+                        }
                         let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
-                         return stream.turnOnOrderBook(c, orderType, amount, close ).then(b =>{
+                         return stream.turnOnOrderBook(c, orderType, amount, close).then(b =>{
                              console.log('turned on order book in candles to place buy', c, orderType, amount, close)
                          })
 
