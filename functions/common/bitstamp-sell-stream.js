@@ -46,18 +46,10 @@ class bitstampSellStream{
 
     }
 
-    async turnOnOrderBook(symbol){
+    async turnOnOrderBook(symbol, amount){
         global.tradeData.symbolInTrade = symbol
+        global.tradeData.amount = amount
         const streamSymbol = symbol + '_USD'
-        await this.getBitstampBalance(symbol).then(b =>{
-            console.log(symbol, 'balance before order book sell' ,b)
-            if(b === 0){
-                return b
-            }else{
-                global.tradeData.amount = b.assetQuantity
-            }
-
-        })
         const bitstampStream = new BitstampStream()
         bitstampStream.on("connected", () =>{
             const inTradeSellStream = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamSymbol}`]);
@@ -78,7 +70,7 @@ class bitstampSellStream{
         const tradeSymbol = symbol.toLowerCase() + 'usd'
         return orderBitstamp.sellLimitOrder(amount, price, tradeSymbol, null, false).then(resp =>{
             console.log(resp, 'placed sell order ', amount, price, tradeSymbol, null, false)
-            global.interval = false
+            global.intrade = false
         }).then(resp =>{
            return this.turnOffOrderBook()
         }).catch(err =>{

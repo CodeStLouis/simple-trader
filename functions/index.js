@@ -373,12 +373,14 @@ async function getCandlesLastTick(c, i){
                     getBitstampBalance(c).then(b =>{
                         if(b !== 0){
                             //spot trade
-                            console.log(c, 'balance in sma 5 sell asset', b)
+                            global.inTrade = true
+                            console.log(c, 'balance in sma 5 sell asset', b.asset, b.assetQuantity)
                             if(b.assetQuantity > 0){
                                 global.tradeData.orderType = 'sell'
                                 global.tradeData.lastClose = close
+                                // turn on stream to get price and place order
                                 const stream = new bitstampSellStream()
-                                return stream.turnOnOrderBook(c)
+                                stream.turnOnOrderBook(b.asset, b.assetQuantity)
                             }
                             } else {
                                     console.log(c, 'dont own it')
