@@ -58,7 +58,7 @@ turnOffTradeStream = () =>{
      bitstampStream.on("connected", () => {
         const inTradeBuyStream = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamingSymbol}`]);
         bitstampStream.on(inTradeBuyStream, ({ data, event }) => {
-            console.log(symbol, 'in buying order book');
+            console.log(symbol, 'in buying order book getting best ask', $.of(data.asks[0][0]).toNumber());
             let convertedLowestAskQty = $.of(data.asks[0][1]).valueOf()
             if(convertedLowestAskQty >= 1) {
                 let limit_price = $.of(data.asks[0][0]).toNumber()

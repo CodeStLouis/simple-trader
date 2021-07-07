@@ -370,23 +370,18 @@ async function getCandlesLastTick(c, i){
                 if (sellAsset === true) {
                     // do we own it
                     console.log(c, 'sma 5 greater than close', close, 'at', i, ' sell if you own it')
-                    getBitstampBalance(c).then(b =>{
-                        if(b !== 0){
-                            //spot trade
+                    for(let a of assetQuantities){
+                        if(a.asset === c){
                             global.inTrade = true
-                            console.log(c, 'balance in sma 5 sell asset', b.asset, b.assetQuantity)
-                            if(b.assetQuantity > 0){
-                                global.tradeData.orderType = 'sell'
-                                global.tradeData.lastClose = close
-                                // turn on stream to get price and place order
-                                const stream = new bitstampSellStream()
-                                stream.turnOnOrderBook(b.asset, b.assetQuantity)
-                            }
-                            } else {
-                                    console.log(c, 'dont own it')
-                                    return 'dont own it'
-                                }
-                            })
+                            global.tradeData.orderType = 'sell'
+                            console.log(a.asset, 'balance in sma 5 sell asset',a.assetQuantities)
+                            const stream = new bitstampSellStream()
+                            stream.turnOnOrderBook(a.asset, a.assetQuantity)
+                        } else {
+                            console.log(c, 'dont own it')
+                            return 'dont own it'
+                        }
+                    }
                 }
 
             })

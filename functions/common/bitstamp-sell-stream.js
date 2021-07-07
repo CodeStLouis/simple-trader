@@ -54,7 +54,7 @@ class bitstampSellStream{
         bitstampStream.on("connected", () =>{
             const inTradeSellStream = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamSymbol}`]);
             bitstampStream.on(inTradeSellStream, ({ data, event}) =>{
-                console.log(streamSymbol, 'in order book line 63')
+                console.log(streamSymbol, 'in order book line 63 getting price', $.of(data.bids[0][0]).valueOf())
                 let orderWithQuantityOfOne = $.of(data.bids[0][1]).valueOf()
                 if(orderWithQuantityOfOne > 1){
                     global.tradeData.price = $.of(data.bids[0][0]).valueOf()
