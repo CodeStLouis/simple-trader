@@ -69,6 +69,7 @@ turnOffTradeStream = () =>{
                     console.log(data, 'calling buying power in buy stream turned to 80%', eightyPercentOfBuyingPower)
                     global.tradeData.amount = eightyPercentOfBuyingPower / limit_price
                     global.tradeData.price = limit_price
+                    Number(global.tradeData.amount).toFixed(6)
                     if (eightyPercentOfBuyingPower > 20) {
                         console.log('placed buy order in stream lin 73', global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade)
                         return this.placeBuyOrderOnBitstamp(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp => {
