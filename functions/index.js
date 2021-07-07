@@ -93,6 +93,16 @@ async function resetGlobalTradeData(){
 
     }
 }
+global.tradeData = {
+    symbolInTrade: {},
+    amount: {},
+    price: {},
+    lastClose: {},
+    daily_order: false,
+    haseTradedThisInterval: false,
+    orderType: {},
+    isConsolidated: false,
+}
 async function getSMANine(s, i){
 //9 day Moving average
     let usableSymbol = s + '/USDT'
@@ -242,9 +252,6 @@ setInterval(function() {
     getOpenOrders().then(open =>{
        // console.log('open orders', open)
     })
-    getAllBitstampBalances().then(b =>{
-        //console.log('balance call in interval', b)
-    })
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
         if(global.inTrade === true &&tradeData.orderType === 'buy' && global.tradeData.haseTradedThisInterval === false){
             getBitstampBuyingPower().then(p =>{
@@ -274,13 +281,6 @@ setInterval(function() {
                 })
             })
         }
-
-    if(global.inTrade === false){
-        const orderBook = new streamBitstampService()
-        orderBook.disconnectOrderBook().then(resp =>{
-            console.log('turned off order book')
-        })
-    }
     cancelAllOrders().then(b =>{
         global.inTrade = false
     })
@@ -297,7 +297,7 @@ setInterval(function() {
          if(global.inTrade === false){
            //  getSMATwentyFive(c, '5m').then()
              getCandlesLastTick(c).then(resp =>{
-                 //console.log('response from candles', resp)
+                 console.log('response from candles', resp)
              }
 
          )
@@ -308,7 +308,7 @@ setInterval(function() {
 async function getCandlesLastTick(c){
     let useAbleSymbol = c + 'USD'
     for (let i of intervals){
-        await limiter.schedule(() => binanceUS.candlesticks(useAbleSymbol, i, (error, ticks, symbol) => {
+        await binanceUS.candlesticks(useAbleSymbol, i, (error, ticks, symbol) => {
             // console.info("candlesticks()", i);
             let last_tick = ticks[ticks.length - 1];
             let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
@@ -316,7 +316,7 @@ async function getCandlesLastTick(c){
             //  const binanceService = new binanceGlobalInfo()
             //  binanceService.balance()
             getSMATwentyFive(c, i).then(smaTwentyFiveData => {
-                console.log(c, '25', smaTwentyFiveData, 'close', close)
+                console.log(c, '25', smaTwentyFiveData, 'close', close, 'at interval ', i)
                 if (smaTwentyFiveData < close ) {
                     console.log(c, 'sma 25 lower than close, ', i, ' if you have buying power and volume is there ', global.buyingPower, 'volume=', volume)
                     if (global.buyingPower < 20) {
@@ -340,7 +340,7 @@ async function getCandlesLastTick(c){
                 }
             })
             getSMANine(c, i).then(smaNineData => {
-                console.log(c, '9', smaNineData, 'close', close)
+                console.log(c, '9', smaNineData, 'close', close, 'at interval ', i)
                 if (smaNineData < close ) {
 
                     if (global.buyingPower < 20) {
@@ -393,7 +393,7 @@ async function getCandlesLastTick(c){
 
             })
 
-        }, {limit: 1000, endTime: rawUtcTimeNow}));
+        }, {limit: 1000, endTime: rawUtcTimeNow});
     }
 }
 
