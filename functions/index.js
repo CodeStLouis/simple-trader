@@ -374,7 +374,7 @@ async function getCandlesLastTick(c, i){
                         if(a.asset === c){
                             global.inTrade = true
                             global.tradeData.orderType = 'sell'
-                            console.log(a.asset, 'balance in sma 5 sell asset',a.assetQuantities)
+                            console.log(a.asset, 'balance in sma 5 sell asset',a.quantity)
                             const stream = new bitstampSellStream()
                             stream.turnOnOrderBook(a.asset, a.assetQuantity)
                         } else {
