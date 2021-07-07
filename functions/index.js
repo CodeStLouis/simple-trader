@@ -170,10 +170,10 @@ async function getAssetBalanceOnBinance(asset){
 
     })
 }
-async function isConsolidated(asset){
+async function isConsolidated(asset, i){
     // if sma 5 is less than nine its consolidated = true
-    await getSMAFive(asset, '15m').then(sma5 =>{
-       getSMANine(asset, '15m').then(sma9 =>{
+    await getSMAFive(asset, i).then(sma5 =>{
+       getSMANine(asset, i).then(sma9 =>{
            if (sma5 < sma9){
                console.log(asset, 'is consolidated not a break out candles', global.tradeData.isConslidated = true)
                global.tradeData.isConslidated = true
@@ -261,13 +261,22 @@ setInterval(function() {
                 let symbol = global.tradeData.symbolInTrade
                 const orderBook = new streamBitstampService()
                 let orderType = global.tradeData.orderType
-                let price = global.tradeData.price
-                let orderAmount = global.buyingPower / price
-                isConsolidated(symbol).then(c =>{
-                    console.log('seems to be in consolidating ', i)
+                let i = global.interval
+                isConsolidated(symbol, i).then(c =>{
+                    console.log('seems to be in consolidation ', i)
                 })
-                orderBook.turnOnOrderBook(symbol, orderType , orderAmount, 0).then(resp =>{
-                    console.log('fredrick restart in trade', symbol, orderType, orderAmount, price)
+                orderBook.turnOnOrderBook(symbol, orderType).then(resp =>{
+                    console.log('fredrick restart in trade', symbol, orderType)
+                    let amount = global.tradeData.amount
+                    let price = global.tradeData.price
+                    let tradeSymbol = symbol.toLowerCase() + 'usd'
+                    return bitstamp.buyLimitOrder(amount, price, tradeSymbol, null, false).then(resp =>{
+                        orderBook.disconnectOrderBook().then()
+                    }).catch(err =>{
+                        console.log(err, 'error in buying restart')
+                    })
+                }).then(resp =>{
+                    console.log('maybe do something else', resp)
                 })
             })
         }
@@ -277,10 +286,16 @@ setInterval(function() {
                 console.log(symbol ,'in restart in trade method')
                 const orderBook = new streamBitstampService()
                 let orderType = global.tradeData.orderType
-                 let orderAmount = b.assetQuantity
-                let price = 0
-                orderBook.turnOnOrderBook(symbol, orderType, orderAmount, price).then(resp =>{
-                    console.log('fredrick restart in trade', symbol, orderType, orderAmount, price)
+                orderBook.turnOnOrderBook(symbol, orderType).then(resp =>{
+                    console.log('fredrick restart in trade', symbol, orderType)
+                    let tradingSymbol = symbol.toLowerCase() + 'usd'
+                    let amount = global.tradeData.amount
+                    let price = global.tradeData.price
+                    return bitstamp.sellLimitOrder(amount, price, tradingSymbol, null, false).then(resp =>{
+                        orderBook.disconnectOrderBook()
+                    }).catch(err =>{
+                        console.log(err, 'in seller at bot restart')
+                    })
                 })
             })
         }
@@ -318,7 +333,7 @@ setInterval(function() {
 async function getCandlesLastTick(c){
     let useAbleSymbol = c + 'USD'
     for (let i of intervals){
-        await limiter.schedule(() => binanceUS.candlesticks(useAbleSymbol, i, (error, ticks, symbol) => {
+        await binanceUS.candlesticks(useAbleSymbol, i, (error, ticks, symbol) => {
             // console.info("candlesticks()", i);
             let last_tick = ticks[ticks.length - 1];
             let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
@@ -340,16 +355,29 @@ async function getCandlesLastTick(c){
                         let orderType = 'buy'
                         global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
-                        global.tradeData.lastClose = close
-                        let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
-                        console.log('amount in buy sma greater than close line 328', amount)
-                        return stream.turnOnOrderBook(c, orderType, amount, close )
-
-                    }
-
-
-                }
-            })
+                        console.log('amount in buy sma 25  greater than close line 358 trade data', global.tradeData)
+                        stream.turnOnOrderBook(c, orderType).then(price => {
+                            console.log('response from order book', JSON.stringify(price))
+                            let limit_price = global.tradeData.price
+                            let tradingSymbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
+                            let amount = global.tradeData.amount = global.buyingPower / global.tradeData.price
+                            console.log('Spot trade line 349 ', amount, limit_price, tradingSymbol, null, false)
+                            return bitstamp.sellLimitOrder(amount, limit_price, tradingSymbol, null, false).then(resp => {
+                                console.log(resp.body, 'Sold!!!!! line 132', amount, limit_price, symbol, null, false)
+                                global.inTrade = false
+                                global.tradeData.haseTradedThisInterval = true
+                            }).then(resp =>{
+                                resetGlobalTradeData()
+                                stream.disconnectOrderBook().then(sold => {
+                                    console.log('disconnected order book after sell placed stream line 146')
+                                })
+                            }).catch(err => {
+                                    console.log('error in candles buy 25 sma line 358', err)
+                            })
+                        })
+                     }
+                  }
+               })
             getSMANine(c, i).then(smaNineData => {
                 console.log(c, '9', smaNineData, 'close', close)
                 if (smaNineData < close ) {
@@ -365,12 +393,25 @@ async function getCandlesLastTick(c){
                         let orderType = global.tradeData.orderType = 'buy'
                         global.tradeData.symbolInTrade = c
                         global.tradeData.close = close
-                        if(global.tradeData.close === close){
-                            global.tradeData.haseTradedThisInterval = true
-                        }
-                        let amount = global.tradeData.amount = global.buyingPower / $(close).toNumber()
-                         return stream.turnOnOrderBook(c, orderType, amount, close).then(b =>{
-                             console.log('turned on order book in candles to place buy', c, orderType, amount, close)
+                        stream.turnOnOrderBook(c, orderType).then(price =>{
+                            console.log('response from order book', price)
+                            let limit_price = global.tradeData.price
+                            let tradingSymbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
+                            let amount = global.tradeData.amount = global.buyingPower / global.tradeData.price
+                            console.log('Spot Trade line 384 ', amount, limit_price, tradingSymbol, null, false)
+                            return bitstamp.sellLimitOrder(amount, limit_price, tradingSymbol, null, false).then(resp => {
+                                console.log(resp.body, 'Sold!!!!! line 132', amount, limit_price, symbol, null, false)
+
+                                global.inTrade = false
+                                global.tradeData.haseTradedThisInterval = true
+                                })
+                            }).then(resp =>{
+                            stream.disconnectOrderBook().then(sold => {
+                                resetGlobalTradeData()
+                                console.log('disconnected order book after sell placed stream line 390')
+                            }).catch(err => {
+                                console.log('error in candles buy 9 sma line 393', err)
+                            })
                          })
 
                     }
@@ -386,13 +427,30 @@ async function getCandlesLastTick(c){
                     getBitstampBalance(c).then(b =>{
                         if(b !== undefined){
                             console.log(c, 'balance in sma 5 sell asset', b)
-                            console.log(c, 'sma 5 greater than close', close, 'at', i, ' sell if you own it')
+                            console.log(c, 'sma 5', smaFiveData, 'greater than close', close, 'at', i, ' sell if you own it')
                             if(b.assetQuantity > 0){
                                 global.tradeData.symbolInTrade = c
                                 global.tradeData.lastClose = close
                                 let orderType = global.tradeData.lastClose = 'sell'
                                 const stream = new streamBitstampService()
-                                stream.turnOnOrderBook(c, orderType, b.assetQuantity, 0)
+                                return stream.turnOnOrderBook(c, orderType).then(resp =>{
+                                    let priceCheck = c + '_USD'
+                                    let price = global.tradeData.price
+                                    let priceNumb = $(price).toNumber()
+                                    let correctPrice = $(priceNumb).toFixed(2)
+                                    let tradeSymbol = c.toLowerCase() + 'usd'
+                                    const ticker = bitstamp.ticker(CURRENCY[`${priceCheck}`]).then(({status, headers, body}) => console.log(body));
+                                    console.log('Spot trade sell at line 419', b.assetQuantity, correctPrice, tradeSymbol, null, false)
+                                    return bitstamp.sellLimitOrder(b.assetQuantity, correctPrice, tradeSymbol, null, false).then(resp =>{
+                                        console.log(resp.body, 'response from sell')
+                                    }).then(resp =>{
+                                        resetGlobalTradeData()
+                                        stream.disconnectOrderBook()
+                                    }).catch(err =>{
+                                        console.log('error after spot sale line 424', err)
+                                    })
+                                })
+
                             }
                             } else {
                                     console.log(c, 'dont own it')
@@ -403,7 +461,7 @@ async function getCandlesLastTick(c){
 
             })
 
-        }, {limit: 1000, endTime: rawUtcTimeNow}));
+        }, {limit: 1000, endTime: rawUtcTimeNow});
     }
 }
 

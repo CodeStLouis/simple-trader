@@ -98,81 +98,34 @@ turnOffTradeStream = () =>{
             }))
         }
     }*/
- async turnOnOrderBook(symbol, orderType, amount, price){
-     if(global.tradeData.symbolInTrade === 'fredrick'){
-         return this.disconnectOrderBook().then(fred =>{
-             console.log('dont sell fredrick')
-             global.inTrade = false
-         })
-     }
+ async turnOnOrderBook(symbol, orderType){
     global.inTrade = true
-    console.log('symbol=', symbol,  'order type=',orderType, 'buying power=', global.buyingPower, 'price=', price)
-     global.tradeData.symbolInTrade = symbol
-     global.tradeData.orderType = orderType
-   //  global.tradeData.amount = global.buyingPower / price
     let tradingSymbol = symbol + 'usd'
     let streamingSymbol = global.tradeData.symbolInTrade + '_USD'
     const bitstampStream = new BitstampStream();
     const trader = new bitStampTrader()
-     let priceToNumb = $(price).toNumber()
-     if(orderType === 'sell' && symbol === global.assetQuantities.asset){
-         global.tradeData.amount = global.assetQuantities.quantity
-     }
-     let longAmount = global.buyingPower / priceToNumb
-     global.tradeData.amount = longAmount.toFixed(6)
-     console.log('price converted', priceToNumb);
     bitstampStream.on("connected", () => {
         const btcEurOrderBookChannel = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamingSymbol}`]);
         bitstampStream.on(btcEurOrderBookChannel, ({ data, event }) => {
             console.log(symbol, 'in order book');
-            //todo when selling, sell to highest bids first
-            let convertedHighestBidQty = $.of(data.bids[0][1]).valueOf()
-            if(convertedHighestBidQty >= 1){
-                // sell to highest bid
-                if (orderType === 'sell' && global.inTrade !== false && streamingSymbol === global.tradeData.symbolInTrade + '_USD'){
+            console.log('symbol=', symbol, 'order type=',orderType)
+            //  global.tradeData.amount = global.buyingPower
+                console.log('in order book line 113 trade data', global.tradeData)
+                if (orderType === 'sell' && global.inTrade !== false && symbol === global.tradeData.symbolInTrade) {
                     // todo add min order!!!!!!!!!!!!!!!!!!!!!
-                    let limit_price = $.of(data.bids[0][0]).toNumber()
-                    let amountNumb = $(amount).toNumber()
-                   // global.tradeData.price = $.of(data.bids[0][0]).valueOf()
-                   // let price = $.of(data.bids[0][0]).valueOf()
-                  console.log(symbol, 'sell limit order in stream no limiter line 141', amountNumb, limit_price, symbol, null, false)
-                    return orderBitstamp.sellLimitOrder(amountNumb, limit_price, tradingSymbol, null, false).then(resp =>{
-                       console.log(resp.body, 'Sold!!!!! line 132',amountNumb, limit_price, symbol, null, false)
-                        global.inTrade = false
-                        global.tradeData.haseTradedThisInterval = true
-                        this.disconnectOrderBook().then(sold =>{
-                            console.log('disconnected order book after sell placed stream line 146')
-                        })
-                    }).catch(err =>{
-                        let symbol = global.tradeData.symbolInTrade
-                        let symbolPlusUsd = symbol + 'usd'
-                        let newTradeSymbol = symbolPlusUsd.toLowerCase()
-                        this.getBitstampBalance(symbol).then(b =>{
-                            let numberAmount = $(b).toNumber()
-                            if (numberAmount > 0){
-                                console.log('err when selling in stream line 155', err ,numberAmount, limit_price, newTradeSymbol, null, false)
-                                return orderBitstamp.sellLimitOrder(numberAmount, limit_price, newTradeSymbol, null, false ).then(resp =>{
-                                    console.log(resp.body, 'err trying to sell again after new balance', err,amountNumb, limit_price, newTradeSymbol, null, false)
-                                    global.inTrade = false
-                                    global.tradeData.haseTradedThisInterval = true
-                                }).then(o =>{
-                                    this.disconnectOrderBook().then(o =>{
-                                        console.log('disconnected order book line 63')
-                                    })
-                                })
-                            } else {
-                                global.inTrade = false
-                                this.disconnectOrderBook()
-                                return 'sold no balance to sell'
-                            }
-                        })
-                    })
-                } else {
-                    return 'trade over'
+                    //todo when selling, sell to highest bids first
+                    let convertedHighestBidQty = $.of(data.bids[0][1]).valueOf()
+                    console.log(convertedHighestBidQty, 'converted bid quantity');
+                    if (convertedHighestBidQty >= 1) {
+                        global.tradeData.price = $.of(data.bids[0][0]).toNumber()
+                        let limit_price = $.of(data.bids[0][0]).toNumber()
+                        // global.tradeData.price = $.of(data.bids[0][0]).valueOf()
+                        // let price = $.of(data.bids[0][0]).valueOf()
+                        return limit_price
+                    }
                 }
-            }
             //TODO when buying, get smallest asks first
-            if(orderType === 'buy' && global.inTrade === true && streamingSymbol === global.tradeData.symbolInTrade + '_USD'){
+            if(orderType === 'buy' && global.inTrade === true && symbol === global.tradeData.symbolInTrade){
             let convertedLowestAskQty = $.of(data.asks[0][1]).valueOf()
                 if(convertedLowestAskQty > 1){
                     global.tradeData.price = $.of(data.asks[0][0]).valueOf()
@@ -186,59 +139,11 @@ turnOffTradeStream = () =>{
                 $(amountNumber),
                 subtractPercent(20)).toNumber().toFixed(6)
                 console.log(global.tradeData.symbolInTrade, 'Trade amount 80% =', eightyPercentOfBuyingPower)
-                let quantity = eightyPercentOfBuyingPower
+                global.tradeData.amount = eightyPercentOfBuyingPower
                // let quantityNum = quantity.toNumber()
                 let tradeSymbolAllLowercase = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
                 let price = Number(global.tradeData.price).toFixed(2)
-                console.log('Spot Trade buy line 197 seems to be correct =>', quantity, testPrice, tradeSymbolAllLowercase, null, false)
-                return orderBitstamp.buyLimitOrder(quantity, testPrice, tradeSymbolAllLowercase, null, false).then(resp => {
-                    console.log(symbol, 'line 199 placed order at $!!!', testPrice, resp.body)
-                    global.inTrade = false
-                    }).then(o =>{
-                    this.disconnectOrderBook().then(buy =>{
-                        global.tradeData.haseTradedThisInterval = true
-                        console.log('disconnected order book after buy')
-                    })
-                }).catch(err => {
-                    this.getBitstampBuyingPower().then(p =>{
-                        if ($(p).toNumber() > 0) {
-                            console.log('getting buying and global trade data after failed buy limit buy', p, global.tradeData)
-                            orderBitstamp.cancelOrdersAll()
-                            let buyingPower = $(p).toNumber()
-                            let newQuantity = buyingPower / global.tradeData.price
-                            let amount = Number((newQuantity).toFixed(6))
-                            let lesserAmount = +$$(
-                                $(amount),
-                                subtractPercent(10)).toNumber()
-                            let symbol = global.tradeData.symbolInTrade
-                            let symbolUsd = symbol + 'usd'
-                            let newPrice = Number((global.tradeData.price).toFixed(2))
-                            let tradeSymbol = symbolUsd.toLowerCase()
-                            console.log(err, 'Spot trade new quantity line 216', lesserAmount, newPrice, tradeSymbol, null, false)
-                            return orderBitstamp.buyLimitOrder(lesserAmount, newPrice, tradeSymbol, null, false).then(resp => {
-                                console.log('second attempt to buy response line 214', resp.body)
-                                global.inTrade = false
-                                this.disconnectOrderBook()
-                            }).catch(err => {
-                                console.log('third attempt to buy response line 222', err)
-                                this.getBitstampBuyingPower().finally(buy => {
-                                    let symbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
-                                    return orderBitstamp.buyLimitOrder(global.tradeData.amount, global.tradeData.price, symbol, null, false).then(resp => {
-                                        console.log('last attempt to buy', resp.body)
-                                    }).finally(resp => {
-                                        let symbol = global.tradeData.symbolInTrade.toLowerCase() + 'usd'
-                                        return orderBitstamp.buyLimitOrder(global.tradeData.amount, global.tradeData.price, symbol, null, false).then(resp => {
-                                            console.log('last attempt to buy', resp.body)
-                                        }).then(d =>{
-                                            this.disconnectOrderBook()
-                                        })
-                                    })
-                                })
-                            })
-                        }
-                    })
-                })
-
+                return ({amount: eightyPercentOfBuyingPower, price: testPrice})
                 } else {
                 return 'trade done'
             }
