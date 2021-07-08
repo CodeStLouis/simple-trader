@@ -4,6 +4,7 @@ const Bottleneck = require("bottleneck");
 const Binanceus = require('node-binance-us-api');
 const { $, gt, multiply, in$, add } = require('moneysafe');
 const { $$, subtractPercent, addPercent } = require('moneysafe/ledger');
+const Promise = require('promise');
 const binanceFunctions = require('./common/binance-balance-exchange-data')
 const res = require("express");
 const binanceUS = new Binanceus().options({
@@ -14,8 +15,8 @@ const binanceUS = new Binanceus().options({
     verbose: true,
 });
 const limiter = new Bottleneck({
-    maxConcurrent: 3,
-    minTime: 1000
+    maxConcurrent: 5,
+    minTime: 500
 });
 
 let t = new Date
@@ -23,17 +24,18 @@ const rawUtcTimeNow = (Math.floor(t.getTime()))
 const intervals =['5m']
 const assets = [
     'ETH',
+    'SOL',
     'LINK',
     'LTC',
-    'OMG',
-    'ADA',
-    'NANO',
     'UNI'
 ]
 global.tradingData ={
     symbol:{},
     price:{},
-    closed:{}
+    closed:{},
+    amount:{},
+    orderType:{},
+    tradeId:{}
 }
 global.technicalIndicators = {
     symbol:{},
@@ -47,16 +49,12 @@ global.myBalances ={
 // todo get buying power
 const binanceBalances = new binanceFunctions()
 getBuyingPower().then(p =>{
-    console.log('buying power =',p, global.myBalances.buyingPower)
     setInterval(function (){
         scanMarket().then(resp =>{
-            console.log('in interval')
-            getSMANine(s, '15m')
-            getSMAFive(s, '15m')
+            console.log('in interval', global.tradingData)
         })
-        let s = global.tradingData.symbol
 
-    }, 60000)
+    }, 20000)
 })
 async function getBuyingPower() {
     if (global.tradingData.symbol !== null) {
@@ -72,7 +70,8 @@ async function getBuyingPower() {
         })
 
     }
-}async function getAssetsOwned(asset){
+}
+async function getAssetsOwned(asset, price){
     let balanceSymbol = asset.replace('USD', '')
     await binanceUS.balance((error, balances) =>{
         let currency = balances[`${balanceSymbol}`];
@@ -82,11 +81,20 @@ async function getBuyingPower() {
         obj.total = add($(obj.available),$(obj.onOrder)).toString()
         let objNumber = $(obj).toNumber()
         //  global.balance[asset] = obj.total;
-        let tradeAvailableValue = currency.available * global.tradingData.price
+        let tradeAvailableValue = currency.available * price
        // let convertedTAV = $.of(tradeAvailableValue)
+        //console.log(asset, 'worth in balance', tradeAvailableValue)
         if(tradeAvailableValue > 10){
-            global.myBalances.assets.push({symbol: asset, assetAvailable: tradeAvailableValue})
-            console.log(asset, 'trade available in USD value $', tradeAvailableValue, 'trading price', global.tradingData.price)
+            if(asset !== null){
+                global.myBalances.assets.push({symbol: asset, assetAvailable: tradeAvailableValue})
+                console.log(global.myBalances)
+            }
+
+            if(global.myBalances.assets.length > 5){
+                console.log('reseting balances')
+                global.myBalances = []
+            }
+            console.log(asset, 'trade available in USD value as of last close $', tradeAvailableValue)
         }
         /*
             let assetValue = multiply($(assetAmount),$(global.tradingData.price)).toString()
@@ -94,42 +102,55 @@ async function getBuyingPower() {
 
     })
 }
-getAssetsOwned(global.tradingData.symbol).then(resp=>{
-    console.log('getting balances')
-})
-async function sellAssetOnBinance(symbol, side, quantity, price){
-    return await binanceUS.order({
-        symbol: symbol,
-        side: side,
-        quantity: quantity,
-        price: price
-    }).then(resp =>{
-        console.log('placed order on Binance')
+for(let a of assets){
+    getAssetsOwned(a).then(resp=>{
+        console.log('getting balances')
     })
 }
-let asset = global.tradingData.symbol
-let side = 'sell'
-let price = global.tradingData.price
-let quantity = global.myBalances.assets[1] /global.tradingData.price
 //sellAssetOnBinance(asset)
 const sma = require('trading-indicator').sma
 async function getSMANine(s, i){
-        let usableSymbol = s.replace('USD', '/USDT')
-        let smaData = await limiter.schedule(() => sma(9, "close", "binance", usableSymbol, i, true))
+  //  console.log(s, 'in sma 9')
+        let usableSymbol = s + '/USDT'
+        let smaData = await limiter.schedule(() => sma(9, "close", "binance", usableSymbol, i, false))
         let lastSMANinecandle = smaData[smaData.length - 1]
-        global.technicalIndicators.sma9 = smaData[smaData.length - 1]
-        global.tradingData.sma9 = lastSMANinecandle
+      //  global.technicalIndicators.sma9 = smaData[smaData.length - 1]
+       // global.tradingData.sma9 = lastSMANinecandle
         return lastSMANinecandle
 }
-async function getSMAFive(s, i){
-    let usableSymbol = s.replace('USD', '/USDT')
-    let smaData = await limiter.schedule(() => sma(5, "close", "binance", usableSymbol, i, false))
-    let lastSMAFiveCandle = smaData[smaData.length - 1]
-    global.technicalIndicators.sma5 = smaData[smaData.length - 1]
-    console.log(s, 'in sma')
-    //console.log(s, lastSMAFiveCandle)
-    return lastSMAFiveCandle
+function sma9Promise(asset, i){
+    return new Promise((resolve, reject)=>{
+        getSMANine(asset, i).then(data =>{
+            //console.log(data)
+            if(data){
+                resolve(data)
+            }else{
+                reject('you suck')
+            }
+        })
+    })
 }
+async function getSMAFive(s, i){
+ //   console.log(s, 'in sma 5')
+    let usableSymbol = s + '/USDT'
+    let smaData = await limiter.schedule(() => sma(9, "close", "binance", usableSymbol, i, false))
+    let lastSmaFiveCandle = smaData[smaData.length - 1]
+  //  global.technicalIndicators.sma5 = smaData[smaData.length - 1]
+    // global.tradingData.sma9 =
+    return lastSmaFiveCandle
+}
+function sma5Promise(asset, i){
+    return new Promise((resolve, reject)=>{
+        getSMAFive(asset, i).then(data =>{
+            if(data){
+                resolve(data)
+            }else{
+                reject('you suck')
+            }
+        })
+    })
+}
+
 async function getLastCandleClosed(asset, i){
    await binanceUS.candlesticks(`${asset}`, "5m", (error, ticks, symbol) => {
        // console.info("candlesticks()", ticks);
@@ -141,10 +162,32 @@ async function getLastCandleClosed(asset, i){
         return ({close: closed})
     }, {limit: 500, endTime: rawUtcTimeNow});
 }
+async function sellAssetOnBinance(symbol, side, quantity, price){
+    return await binanceUS.order({
+        symbol: symbol,
+        side: side,
+        quantity: quantity,
+        price: price
+    }).then(resp =>{
+        console.log('placed order on Binance')
+    })
+}
+function orderPromise(symbol, side, quantity, price){
+    return new Promise((resolve, reject) =>{
+        sellAssetOnBinance(symbol, side, quantity, price).then(data =>{
+            if(data === 200){
+                resolve(data)
+            }else{
+                reject(data)
+            }
+        })
+    })
+}
 async function scanMarket(){
     for (let a of assets){
         let binanceSymbol = a + 'USD'
         let usableSymbol = a + '/USDT'
+        const i = '5m'
         //getAssetsOwned(binanceSymbol).then()
         limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker)=>{
             if ( error ) console.error(error);
@@ -152,16 +195,30 @@ async function scanMarket(){
                 // console.info("candlesticks()", ticks);
                 let last_tick = ticks[ticks.length - 1];
                 let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
-                global.tradingData.symbol = symbol
-               // console.info(symbol+" last close: "+close);
-                global.tradingData.price = parseFloat(ticker[binanceSymbol]);
-                global.tradingData.closed = +close
-                /* let smaNine =
-                 global.tradingData.sma9 = smaNine[smaNine.length - 1]
-                 let smaFive = sma(5, "close", "binance", usableSymbol, '15m', true)
-                 global.tradingData.sma5 = smaFive[smaFive.length - 1]*/
+                sma9Promise(a, i).then(data =>{
+                   // console.log(a, data,'sma 9 data inside scan close', close)
+                    if(close > data){
+                        console.log(a , close, 'greater than sma', data)
+                        global.tradingData.symbol = a
+                        // console.info(symbol+" last close: "+close);
+                        global.tradingData.price = parseFloat(ticker[binanceSymbol]);
+                        global.tradingData.closed = +close
+                        global.tradingData.orderType = 'buy'
+                        let fixedFloatPrice = global.myBalances.buyingPower / global.tradingData.price
+                        global.tradingData.amount = Number(fixedFloatPrice).toFixed(8)
+                        console.log('Last Trading Data in 9 = ', global.tradingData,'buying power =', global.myBalances.buyingPower)
+                    }
+                })
+                sma5Promise(a,i).then(data =>{
+                   // console.log(a, data, ' sma 5 data in scan', close)
+                    if(close < data){
+                        getAssetsOwned(a, close)
+                        console.log(a, 'sell it if own it', global.myBalances.assets.keys())
+                        console.log('selling', binanceSymbol, global.myBalances[assets].assetAvailable, global.tradingData.price, null, null)
+                        //binanceUS.sell(binanceSymbol, global.myBalances[assets].assetAvailable, global.tradingData.price, undefined, undefined)
 
-                    console.log('Last Trading Data = ', global.tradingData,'balances=', global.myBalances,'technical indicators=', global.technicalIndicators)
+                    }
+                })
 
             }, {limit: 100, endTime: rawUtcTimeNow});
 

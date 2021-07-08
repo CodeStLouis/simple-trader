@@ -2,7 +2,7 @@
   "name": "express-server",
   "version": "1.0.0",
   "description": "",
-  "main": "../bitstamp-scanner/server.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +14,7 @@
     "binance-api-node": "^0.11.3",
     "express": "^4.17.1",
     "node-binance-api": "^0.12.5",
+    "promise": "^8.1.0",
     "trading-indicator": "^1.0.4-beta",
     "websocket": "^1.0.34",
     "ws": "^7.4.6"
