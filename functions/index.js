@@ -103,6 +103,7 @@ global.tradeData = {
     daily_order: false,
     haseTradedThisInterval: false,
     orderType: {},
+    inTrade:{},
     isConsolidated: false,
 }
 async function getSMANine(s, i){
@@ -405,6 +406,7 @@ async function getCandlesLastTick(c, i){
                             console.log(a.asset, 'balance in sma 5 sell asset',a.quantity)
                             global.tradeData.symbolInTrade = a.asset
                             global.tradeData.amount = a.quantity
+                            global.tradeData.inTrade = true
                             const streamSymbol = symbol + '_USD'
                             const bitstampStream = new BitstampStream()
                             bitstampStream.on("connected", () =>{
