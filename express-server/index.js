@@ -216,7 +216,6 @@ async function scanMarket(){
                         console.log(a, 'sell it if own it', global.myBalances.assets.keys())
                         console.log('selling', binanceSymbol, global.myBalances[assets].assetAvailable, global.tradingData.price, null, null)
                         //binanceUS.sell(binanceSymbol, global.myBalances[assets].assetAvailable, global.tradingData.price, undefined, undefined)
-
                     }
                 })
 

@@ -61,7 +61,8 @@ const binanceAssets = [
     'EGLD',
     'ETC',
     'SOL',
-    'WAVES'
+    'WAVES',
+    'LINK'
 ]
 const intervals = ['5m']
 const fetch = require('node-fetch');
@@ -247,6 +248,18 @@ setInterval(function() {
     }
     getBitstampBuyingPower().then()
     console.log('Fredrick you better work this time NEW INTERVAL!!!!!!!! are we in trade? what is trade data? MASTER BOT AT 5m interval', global.inTrade, global.tradeData)
+    if(global.intrade === true){
+        getBitstampBalance(global.tradeData.symbolInTrade).then(data =>{
+            console.log('balance in restart and in trade', data)
+            const sellStream = new bitstampSellStream()
+            sellStream.turnOnOrderBook(global.tradeData.symbolInTrade, data).then(resp =>{
+                console.log('order book turned on')
+            }).catch(err =>{
+                console.log(err, 'error in oder book after restart')
+            })
+        })
+
+    }
        /* if(global.inTrade === true &&tradeData.orderType === 'buy' && global.tradeData.haseTradedThisInterval === false){
             getBitstampBuyingPower().then(p =>{
                 let symbol = global.tradeData.symbolInTrade
@@ -303,7 +316,22 @@ setInterval(function() {
          }
      }
 }, 30000)
+async function placeSellOrderOnBitstamp(amount, price, symbol){
+    const tradeSymbol = symbol.toLowerCase() + 'usd'
+    return bitstamp.sellLimitOrder(amount, price, tradeSymbol, null, false).then(resp =>{
+        console.log(resp, 'placed sell order ', amount, price, tradeSymbol, null, false)
+        global.intrade = false
+    }).then(resp =>{
+        return this.turnOffOrderBook()
+    }).catch(err =>{
+        console.log(err, 'in sell method line 72')
+    })
 
+}
+async function turnOffOrderBook(){
+    const bitstampStream = new BitstampStream();
+    bitstampStream.close()
+}
 async function getCandlesLastTick(c, i){
     let useAbleSymbol = c + 'USD'
 
@@ -375,8 +403,27 @@ async function getCandlesLastTick(c, i){
                             global.inTrade = true
                             global.tradeData.orderType = 'sell'
                             console.log(a.asset, 'balance in sma 5 sell asset',a.quantity)
-                            const stream = new bitstampSellStream()
-                            stream.turnOnOrderBook(a.asset, a.assetQuantity)
+                            global.tradeData.symbolInTrade = a.asset
+                            global.tradeData.amount = a.quantity
+                            const streamSymbol = symbol + '_USD'
+                            const bitstampStream = new BitstampStream()
+                            bitstampStream.on("connected", () =>{
+                                const inTradeSellStream = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamSymbol}`]);
+                                bitstampStream.on(inTradeSellStream, ({ data, event}) =>{
+                                    console.log(streamSymbol, 'in order book index line 413 getting price', $.of(data.bids[0][0]).valueOf())
+                                    let orderWithQuantityOfOne = $.of(data.bids[0][1]).valueOf()
+                                    if(orderWithQuantityOfOne > 1){
+                                        global.tradeData.price = $.of(data.bids[0][0]).valueOf()
+                                        return this.placeSellOrderOnBitstamp(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp =>{
+                                            console.log(resp, 'selling lin 67', global.tradeData)
+                                        }).then(stop =>{
+                                            turnOffOrderBook()
+                                        }).catch(err =>{
+                                            console.log(err, 'index selling after order book')
+                                        })
+                                    }
+                                })
+                            })
                         } else {
                             console.log(c, 'dont own it')
                             return 'dont own it'
@@ -387,6 +434,7 @@ async function getCandlesLastTick(c, i){
             })
 
         }, {limit: 1000, endTime: rawUtcTimeNow});
+
 
 }
 
