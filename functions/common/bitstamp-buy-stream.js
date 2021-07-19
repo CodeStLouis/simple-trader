@@ -72,7 +72,7 @@ turnOffTradeStream = () =>{
                     $(global.tradeData.amount).toFixed(6)
                     if (eightyPercentOfBuyingPower > 20) {
                         console.log('placed buy order in stream lin 73', global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade)
-                        return this.placeBuyOrderOnBitstamp(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp => {
+                        this.buyPromise(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp => {
                             console.log('placed buy order in stream lin 74')
                         }).then(resp => {
                             this.disconnectOrderBook()
@@ -100,6 +100,17 @@ turnOffTradeStream = () =>{
         }).catch(err =>{
             console.log(err, 'err in buy stream')
         })
+    }
+    async buyPromise(amount, price, symbol){
+    return new Promise((resolve, reject)=>{
+        this.placeBuyOrderOnBitstamp(amount, price, symbol).then(resp =>{
+            if(resp === 200){
+                resolve(resp)
+            } else {
+                reject(resp)
+            }
+        })
+    })
     }
     async disconnectOrderBook(){
         const bitstampStream = new BitstampStream();
