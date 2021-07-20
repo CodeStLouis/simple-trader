@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+require('dotenv').config()
+const dotenv = require('dotenv')
 const Bottleneck = require("bottleneck");
 const Binanceus = require('node-binance-us-api');
 const { $, gt, multiply, in$, add } = require('moneysafe');
@@ -27,7 +29,6 @@ const assets = [
     'SOL',
     'LINK',
     'DASH',
-    'ENJ',
     'UNI',
     'LTC',
     'REP'
@@ -74,6 +75,7 @@ getFormattedDate()
 // todo get buying power
 const binanceBalances = new binanceFunctions()
 getBuyingPower().then(p =>{
+    console.log('env var', process.env.SYMBOL)
     setInterval(function (){
         scanMarket().then(resp =>{
             getAllBinanceBalances().then()
@@ -81,11 +83,26 @@ getBuyingPower().then(p =>{
            // cancelAllOpenOrders().then()
             console.log('in interval', global.tradingData, 'balances',global.myBalances,'buying power', global.myBalances.buyingPower)
             getFormattedDate()
-            console.log('new interval!!!!!!!!',)
+            resetGlobalvars().then()
+            console.log('new interval!!!!!!!! reset globals',)
         })
 
     }, 20000)
 })
+async function resetGlobalvars(){
+    global.tradingData ={
+        symbol:{},
+        price:{},
+        closed:{},
+        amount:{},
+        orderType:{},
+        tradeId:{}
+    }
+    global.myBalances ={
+        buyingPower: {},
+        assets: []
+    }
+}
 async function getBuyingPower() {
     if (global.tradingData.symbol !== null) {
         await binanceUS.balance((error, balances) => {
@@ -135,7 +152,7 @@ async function getAssetsOwnedAndSell(asset, price){
                 global.tradingData.symbol = asset +'USD'
                 let amount = +$$(
                     $(currency.available),
-                    subtractPercent(20)).toNumber().toFixed(2)
+                    subtractPercent(10)).toNumber().toFixed(2)
                 global.tradingData.amount = parseFloat(currency.available).toFixed(2)
                 console.log(global.tradingData.symbol, 'inside binance sell balance function!!!!!!!!!!!!!!!!!!!!!!!!!!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$',amount,  global.tradingData.amount, 'price=', price)
                 sellOrderPromise(global.tradingData.symbol, amount, price)
@@ -251,7 +268,7 @@ async function scanMarket(){
     for (let a of assets){
         let binanceSymbol = a + 'USD'
         let usableSymbol = a + '/USDT'
-        const i = '5m'
+        const i = '1m'
         //getAssetsOwned(binanceSymbol).then()
         limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker)=>{
             if ( error ) console.error(error);
@@ -278,10 +295,10 @@ async function scanMarket(){
                             let makeItNumbers = fixedFloatPrice.toFixed(4)
                             global.tradingData.amount = +$$(
                                 $(makeItNumbers),
-                                subtractPercent(20)).toNumber().toFixed(2)
+                                subtractPercent(15)).toNumber().toFixed(2)
                             let tradeValue = global.tradingData.amount * global.tradingData.price
                             console.log('Last Trading Data in 9 = ', global.tradingData,'buying power =', global.myBalances.buyingPower, 'trade value =',tradeValue)
-                            if ( global.myBalances.buyingPower > 10){
+                            if ( global.myBalances.buyingPower > 15){
                                 console.log('symbol right before buy', JSON.stringify(binanceSymbol))
                                 buyOrderPromise(binanceSymbol, global.tradingData.amount, global.tradingData.price)
                             }
