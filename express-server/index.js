@@ -21,15 +21,16 @@ const limiter = new Bottleneck({
 
 let t = new Date
 const rawUtcTimeNow = (Math.floor(t.getTime()))
-const intervals =['5m']
+const intervals =['1m']
 const assets = [
     'ETH',
     'SOL',
     'LINK',
-    'LTC',
-    'UNI',
+    'DASH',
     'ENJ',
-    'DASH'
+    'UNI',
+    'LTC',
+    'REP'
 ]
 global.tradingData ={
     symbol:{},
@@ -75,12 +76,15 @@ const binanceBalances = new binanceFunctions()
 getBuyingPower().then(p =>{
     setInterval(function (){
         scanMarket().then(resp =>{
+            getAllBinanceBalances().then()
+            getBuyingPower().then()
+           // cancelAllOpenOrders().then()
             console.log('in interval', global.tradingData, 'balances',global.myBalances,'buying power', global.myBalances.buyingPower)
             getFormattedDate()
             console.log('new interval!!!!!!!!',)
         })
 
-    }, 60000)
+    }, 20000)
 })
 async function getBuyingPower() {
     if (global.tradingData.symbol !== null) {
@@ -97,7 +101,20 @@ async function getBuyingPower() {
 
     }
 }
-async function getAssetsOwned(asset, price){
+async function cancelAllOpenOrders(){
+   await binanceUS.cancelOrders("XMRBTC", (error, response, symbol) => {
+        console.info(symbol+" cancel response:", response);
+    });
+}
+async function getAllBinanceBalances(){
+    await binanceUS.balance((error, balances) => {
+        if ( error ) return console.error(error);
+        console.info("balances()", balances);
+        console.info("ETH balance: ", balances.ETH.available);
+
+    });
+}
+async function getAssetsOwnedAndSell(asset, price){
     console.log('symbol entering getAssetsOwned -- index line 102', asset)
     let balanceSymbol = asset.replace('USD', '')
     await binanceUS.balance((error, balances) =>{
@@ -112,32 +129,26 @@ async function getAssetsOwned(asset, price){
        // let convertedTAV = $.of(tradeAvailableValue)
         //console.log(asset, 'worth in balance', tradeAvailableValue)
         if(tradeAvailableValue > 10){
-            if(asset !== null || true){
+            if(asset !== null || true && global.tradingData.orderType === 'sell'){
                 global.myBalances.assets.push({symbol: asset, quantity: currency.available, tradeValueInUSD: tradeAvailableValue})
-                console.log('inside binance balance function',global.myBalances)
+                console.log(asset, 'inside binance sell balance function', currency.available, obj.available)
+                global.tradingData.symbol = asset +'USD'
+                let amount = +$$(
+                    $(currency.available),
+                    subtractPercent(20)).toNumber().toFixed(2)
+                global.tradingData.amount = parseFloat(currency.available).toFixed(2)
+                console.log(global.tradingData.symbol, 'inside binance sell balance function!!!!!!!!!!!!!!!!!!!!!!!!!!$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$',amount,  global.tradingData.amount, 'price=', price)
+                sellOrderPromise(global.tradingData.symbol, amount, price)
+                return  global.tradingData.amount
             }
-
-            /*if(global.myBalances.assets.length > 5){
-                console.log('resetting balances')
-                global.myBalances = []
-                for(let a of assets){
-                    this.getAssetBalance(asset).then(data =>{
-                        global.myBalances.push({symbol: a, quantity: data})
-                    })
-                }
-
-            }*/
             console.log(asset, 'trade available in USD value as of last close $', tradeAvailableValue)
+        } else {
+            return 'you dont own it'
         }
         /*
             let assetValue = multiply($(assetAmount),$(global.tradingData.price)).toString()
             global.myBalances.assets.push({symbol: asset, value: assetValue})*/
 
-    })
-}
-for(let a of assets){
-    getAssetsOwned(a).then(resp=>{
-        console.log('getting balances')
     })
 }
 //sellAssetOnBinance(asset)
@@ -244,11 +255,11 @@ async function scanMarket(){
         //getAssetsOwned(binanceSymbol).then()
         limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker)=>{
             if ( error ) console.error(error);
-            binanceUS.candlesticks(`${binanceSymbol}`, "5m", (error, ticks, symbol) => {
+            binanceUS.candlesticks(`${binanceSymbol}`, "1m", (error, ticks, symbol) => {
                 // console.info("candlesticks()", ticks);
                 let last_tick = ticks[ticks.length - 1];
                 let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
-                console.log(binanceSymbol, 'buy base volume?', buyBaseVolume,'buy Asset Volume?', buyAssetVolume)
+                console.log(binanceSymbol, 'buy base volume?', buyBaseVolume,'buy Asset Volume?', buyAssetVolume, 'timestamp =', closeTime, 'vs raw time', rawUtcTimeNow)
                 sma9Promise(a, i).then(data =>{
                    // console.log(a, data,'sma 9 data inside scan close', close)
                     const buy = (close > data)
@@ -264,13 +275,13 @@ async function scanMarket(){
                             global.tradingData.closed = +close
                             global.tradingData.orderType = 'buy'
                             let fixedFloatPrice = global.myBalances.buyingPower / global.tradingData.price
-                            let makeItNumbers = fixedFloatPrice.toFixed(8)
+                            let makeItNumbers = fixedFloatPrice.toFixed(4)
                             global.tradingData.amount = +$$(
                                 $(makeItNumbers),
-                                subtractPercent(20)).toNumber().toFixed(6)
+                                subtractPercent(20)).toNumber().toFixed(2)
                             let tradeValue = global.tradingData.amount * global.tradingData.price
                             console.log('Last Trading Data in 9 = ', global.tradingData,'buying power =', global.myBalances.buyingPower, 'trade value =',tradeValue)
-                            if (tradeValue > 10){
+                            if ( global.myBalances.buyingPower > 10){
                                 console.log('symbol right before buy', JSON.stringify(binanceSymbol))
                                 buyOrderPromise(binanceSymbol, global.tradingData.amount, global.tradingData.price)
                             }
@@ -279,14 +290,16 @@ async function scanMarket(){
 
                 })
                 sma5Promise(a,i).then(data =>{
-                   // console.log(a, data, ' sma 5 data in scan', close)
+                    const sell = (close < data)
+                    console.log(a, data, ' sma 5 data in scan', close, 'sell', sell)
                     if(close < data){
-                        getAssetsOwned(a, close)
-                        console.log(a, 'sell it if own it', global.myBalances[assets].symbol)
-                        console.log('selling', binanceSymbol, global.myBalances[a].assetAvailable, global.tradingData.price, null, null)
-                        /*const orderSymbol = global.
-                        orderPromise()*/
-                        //binanceUS.sell(binanceSymbol, global.myBalances[assets].assetAvailable, global.tradingData.price, undefined, undefined)
+                        global.tradingData.symbol = a
+                        global.tradingData.price = parseFloat(ticker[binanceSymbol]);
+                        console.log(a, 'sell it if own it')
+                        getAssetsOwnedAndSell(global.tradingData.symbol, global.tradingData.price).then(b =>{
+                            console.log('selling', global.tradingData.symbol, global.tradingData.price)
+                            //sellOrderPromise(binanceSymbol, global.myBalances.assets.quantity)
+                        })
                     }
                 })
 
@@ -298,12 +311,7 @@ async function scanMarket(){
 
     }
 }
-scanMarket().then(r =>{
-    if(global.technicalIndicators.symbol === global.technicalIndicators.symbol && global.technicalIndicators.sma9 > global.tradingData.closed){
-        console.log('Time to trade do we have the data???', global.tradingData, global.myBalances, global.technicalIndicators)
 
-    }
-})
 
 console.log('im alive')
 app.listen(3005);
