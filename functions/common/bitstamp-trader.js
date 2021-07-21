@@ -1,7 +1,7 @@
 const {BitstampStream, Bitstamp, CURRENCY} = require("node-bitstamp");
 const { $, gt } = require('moneysafe');
 const { $$, subtractPercent, addPercent } = require('moneysafe/ledger');
-const streamBitstampService = require('./bitstamp-stream')
+const streamBitstampService = require('./bitstamp-buy-stream')
 const Bottleneck = require("bottleneck");
 const key = "08n2v39ePpdjEEXNVqlbr0RZf6TYIjDU";
 const secret = "UNskrLDTqV34RxzzJG5nlolK982f7nuV";
