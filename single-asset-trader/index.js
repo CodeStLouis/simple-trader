@@ -76,7 +76,7 @@ async function getAllBinanceBalances(){
     });
 }
 getAllBinanceBalances()
-const sma = require('trading-indicator').sma
+const sma = require('trading-indicator').SMA
 async function getSMANine(s, i){
       console.log(s, 'in sma 9')
     let usableSymbol = s + '/USDT'
