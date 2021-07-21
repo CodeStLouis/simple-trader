@@ -188,7 +188,6 @@ async function getAllBitstampBalances(){
     const balance = await bitstamp.balance().then(({body:data}) => data);
     console.log('balances', balance)
 }
-
 async function getBitstampBalance(assetSymbol){
     let assetToLowercase = assetSymbol.toLowerCase()
     let assetInAvailableFormat = assetToLowercase + '_available'
@@ -197,6 +196,7 @@ async function getBitstampBalance(assetSymbol){
     //  console.debug('usd balance =', UsdBalance, asset_balance,' Balance =', assetBalance)
     let assetConvertedAmount = $.of(assetBalance).valueOf();
     // console.log(assetConvertedAmount,'converted')
+
     let assetGreaterThanZero = gt($(assetConvertedAmount), $(0))
     // let usdGreaterThanTwenty = gt($(buyingPower), $(20))
     // console.debug('I have ', assetInAvailableFormat, assetGreaterThanZero, 'or usd amount', buyingPower)
@@ -204,12 +204,13 @@ async function getBitstampBalance(assetSymbol){
       //  console.log('asset greater than 0', assetSymbol)
         global.assetQuantities.push({asset: assetSymbol, quantity: assetConvertedAmount })
         console.log('global variables assigned', global.assetQuantities)
-        global.tradeData.amount = global.assetQuantities.quantity
         // const ticker = await bitstamp.ticker(CURRENCY.XLM_USD).then(({status, headers, body}) => console.log('ticker body', body));
+        if(assetGreaterThanZero){
             return {asset: assetSymbol,  assetQuantity: assetConvertedAmount}
+        }
 
     } else {
-        const dontOwn = 0
+        const dontOwn = `You dont own ${assetSymbol}`
         return dontOwn
     }
 
@@ -219,7 +220,7 @@ async function getBitstampBuyingPower(){
     const balance = await limiter.schedule(() => bitstamp.balance().then(({body:data}) => data));
     const UsdBalance = balance.usd_balance
     global.buyingPower = $(UsdBalance).toNumber()
-    console.log('getting buying power', global.buyingPower)
+    console.log('getting buying power', UsdBalance, global.buyingPower)
     return UsdBalance
 }
 
@@ -311,6 +312,7 @@ setInterval(function() {
                  })
              })
 
+         )
          }
      }
 }, 30000)
@@ -385,6 +387,7 @@ async function getCandlesLastTick(c, i){
             getSMANine(c, i).then(smaNineData => {
                 console.log(c, '9', smaNineData, 'close', close, 'at interval ', i)
                 if (smaNineData < close ) {
+
                     if (global.buyingPower < 20) {
                         // start live order book
                         const noBuyingPower = 'no buying power'
