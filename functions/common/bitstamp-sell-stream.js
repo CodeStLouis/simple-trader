@@ -45,7 +45,30 @@ class bitstampSellStream{
         }
 
     }
+    async placeSellOrderOnBitstamp(amount, price, symbol){
+        const tradeSymbol = symbol.toLowerCase() + 'usd'
+        this.turnOnOrderBook(symbol, null).then()
+        return orderBitstamp.sellLimitOrder(amount, price, tradeSymbol, null, false).then(resp =>{
+            console.log(resp, 'placed sell order ', amount, price, tradeSymbol, null, false)
+            global.intrade = false
+        }).then(resp =>{
+            return this.turnOffOrderBook()
+        }).catch(err =>{
+            console.log(err, 'in sell stream method line 85', global.tradeData)
+        })
 
+    }
+    async sellPromise(amount, price, tradeSymbol){
+        return new Promise((resolve, reject)=>{
+            this.placeSellOrderOnBitstamp(amount, price, tradeSymbol).then(data =>{
+                if(data === 200){
+                    resolve(data)
+                }else{
+                    reject(data)
+                }
+            })
+        })
+    }
     async turnOnOrderBook(symbol, amount){
         if(amount !== null){
             const streamSymbol = symbol + '_USD'
@@ -71,30 +94,7 @@ class bitstampSellStream{
 
 
     }
-    async placeSellOrderOnBitstamp(amount, price, symbol){
-        const tradeSymbol = symbol.toLowerCase() + 'usd'
-        this.turnOnOrderBook(symbol, null).then()
-        return orderBitstamp.sellLimitOrder(amount, price, tradeSymbol, null, false).then(resp =>{
-            console.log(resp, 'placed sell order ', amount, price, tradeSymbol, null, false)
-            global.intrade = false
-        }).then(resp =>{
-           return this.turnOffOrderBook()
-        }).catch(err =>{
-            console.log(err, 'in sell stream method line 85', global.tradeData)
-        })
 
-    }
-    async sellPromise(amount, price, tradeSymbol){
-        return new Promise((resolve, reject)=>{
-            this.placeSellOrderOnBitstamp(amount, price, tradeSymbol).then(data =>{
-                if(data === 200){
-                    resolve(data)
-                }else{
-                    reject(data)
-                }
-            })
-        })
-    }
     async turnOffOrderBook(){
         const bitstampStream = new BitstampStream();
         bitstampStream.close()
