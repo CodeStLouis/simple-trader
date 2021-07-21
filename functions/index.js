@@ -253,9 +253,7 @@ function getPricing(asset){
         })
     })
 }
-getSellingPrice(global.tradeData.symbolInTrade).then(sell =>{
-    console.log('spot trade in get selling price index line 242', global.tradeData)
-})
+
 
 getOpenOrders().then(data =>{
     console.log('calling open orders')
@@ -317,8 +315,8 @@ setInterval(function() {
 async function placeSellOrderOnBitstamp(amount, price, tradeSymbol){
     const sellTradeSymbol = tradeSymbol.toLowerCase() + 'usd'
     if(amount === undefined || null || price === undefined || null && tradeSymbol !== undefined || null){
-        console.log(sellTradeSymbol, 'do not make incorrect calls line 319 index')
-        getCandlesLastTick(global.assetQuantities.asset, '5m').then()
+        console.log(tradeSymbol, 'do not make incorrect calls line 319 index')
+        getCandlesLastTick(tradeSymbol, '1m').then()
         return 'trade data incomplete'
     } else {
         console.log(sellTradeSymbol, 'trade dat complete', global.tradeData)
@@ -463,7 +461,7 @@ async function getCandlesLastTick(c, i){
 
             })
 
-        }, {limit: 1000, endTime: rawUtcTimeNow});
+        }, {limit: 100, endTime: rawUtcTimeNow});
 
 
 }

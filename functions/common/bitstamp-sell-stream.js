@@ -22,29 +22,6 @@ const limiter = new Bottleneck({
 });
 class bitstampSellStream{
     constructor() {}
-    async getBitstampBalance(assetSymbol){
-        let assetToLowercase = assetSymbol.toLowerCase()
-        let assetInAvailableFormat = assetToLowercase + '_available'
-        const balance = await limiter.schedule(() => orderBitstamp.balance().then(({body:data}) => data));
-        const assetBalance = balance[`${assetInAvailableFormat}`]
-        //  console.debug('usd balance =', UsdBalance, asset_balance,' Balance =', assetBalance)
-        let assetConvertedAmount = $.of(assetBalance).valueOf();
-        // console.log(assetConvertedAmount,'converted')
-        let assetGreaterThanZero = gt($(assetConvertedAmount), $(0))
-        // let usdGreaterThanTwenty = gt($(buyingPower), $(20))
-        // console.debug('I have ', assetInAvailableFormat, assetGreaterThanZero, 'or usd amount', buyingPower)
-        if (assetGreaterThanZero){
-            //  console.log('asset greater than 0', assetSymbol)
-            global.assetQuantities.push({asset: assetSymbol, quantity: assetConvertedAmount })
-            console.log('global variables assigned', global.assetQuantities)
-            // const ticker = await bitstamp.ticker(CURRENCY.XLM_USD).then(({status, headers, body}) => console.log('ticker body', body));
-          return {asset: assetSymbol,  assetQuantity: assetConvertedAmount}
-        } else {
-            const dontOwn = 0
-            return dontOwn
-        }
-
-    }
 
     async turnOnOrderBook(symbol, amount){
         if(amount !== null){
@@ -55,7 +32,7 @@ class bitstampSellStream{
                 bitstampStream.on(inTradeSellStream, ({ data, event}) =>{
                     console.log(streamSymbol, 'in order book line 58, getting price in selling order book', $.of(data.bids[0][0]).valueOf())
                     let orderWithQuantityOfOne = $.of(data.bids[0][1]).valueOf()
-                    if(orderWithQuantityOfOne > 1){
+                    if($.of(data.bids[0][1]).valueOf() > 1){
                         global.tradeData.price = $.of(data.bids[0][0]).valueOf()
                         console.log('in sell order book line 62', global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade)
                         this.sellPromise(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp =>{
