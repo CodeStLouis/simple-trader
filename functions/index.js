@@ -58,11 +58,12 @@ const binanceAssets = [
     'ADA',
     'NANO',
     'UNI',
-    'EGLD',
     'ETC',
     'SOL',
     'WAVES',
-    'LINK'
+    'LINK',
+    'HNT',
+    'fil'
 ]
 const intervals = ['5m']
 const fetch = require('node-fetch');
