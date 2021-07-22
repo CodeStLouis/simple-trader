@@ -340,34 +340,6 @@ setInterval(function() {
 
     }
 
-     for(let c of crypto) {
-         if(global.inTrade === false){
-           //  getSMATwentyFive(c, '5m').then()
-             const i = '1m'
-             getCandlesLastTick(c, i).then(resp =>{
-                 console.log(c, 'call candles at', i)
-             })
-
-         }
-     }
-}, 15000)
-async function placeSellOrderOnBitstamp(amount, price, tradeSymbol){
-    const sellTradeSymbol = tradeSymbol.toLowerCase() + 'usd'
-    if(amount === undefined || null || price === undefined || null && tradeSymbol !== undefined || null){
-        console.log(tradeSymbol, 'do not make incorrect calls line 313 index')
-        getCandlesLastTick(tradeSymbol, '1m').then()
-        return 'trade data incomplete'
-    } else {
-        console.log(sellTradeSymbol, 'trade dat complete', global.tradeData)
-        return bitstamp.sellLimitOrder(amount, price, sellTradeSymbol, null, false).then(resp =>{
-            console.log(resp, 'placed sell order ', amount, price, tradeSymbol, null, false)
-            global.intrade = false
-        }).then(resp =>{
-            return this.turnOffOrderBook()
-        }).catch(err =>{
-            console.log(err, 'in sell method index line 324', amount, price, sellTradeSymbol)
-
-
     async function sellBitstampPromise(amount, price, tradeSymbol) {
         return new Promise((resolve, reject) => {
             placeSellOrderOnBitstamp(amount, price, tradeSymbol).then(resp => {
