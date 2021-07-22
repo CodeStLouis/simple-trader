@@ -59,8 +59,7 @@ turnOffTradeStream = () =>{
         const inTradeBuyStream = bitstampStream.subscribe(bitstampStream.CHANNEL_ORDER_BOOK, CURRENCY[`${streamingSymbol}`]);
         bitstampStream.on(inTradeBuyStream, ({ data, event }) => {
             console.log(symbol, 'in buying order book getting best ask', $.of(data.asks[0][0]).toNumber());
-            let convertedLowestAskQty = $.of(data.asks[0][1]).valueOf()
-            if(convertedLowestAskQty >= 1) {
+            if($.of(data.asks[0][1]).valueOf() >= 1) {
                 let limit_price = $.of(data.asks[0][0]).toNumber()
                 this.getBitstampBuyingPower().then(data => {
                     const eightyPercentOfBuyingPower = +$$(
@@ -69,10 +68,10 @@ turnOffTradeStream = () =>{
                     console.log(data, 'calling buying power in buy stream turned to 80%', eightyPercentOfBuyingPower)
                     global.tradeData.amount = eightyPercentOfBuyingPower / limit_price
                     global.tradeData.price = limit_price
-                    $(global.tradeData.amount).toFixed(6)
+                    let amount = Number(global.tradeData.amount).toFixed(6)
                     if (eightyPercentOfBuyingPower > 20) {
-                        console.log('placed buy order in stream lin 73', global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade)
-                        this.buyPromise(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp => {
+                        console.log('placed buy order in stream lin 73', amount, global.tradeData.price, 'eth')
+                        this.buyPromise(amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp => {
                             console.log('placed buy order in stream lin 74')
                         }).then(resp => {
                             this.disconnectOrderBook()
