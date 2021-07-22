@@ -25,13 +25,14 @@ let t = new Date
 const rawUtcTimeNow = (Math.floor(t.getTime()))
 const intervals =['1m']
 const assets = [
-    'ETH',
-    'SOL',
-    'LINK',
-    'DASH',
+    'ADA',
+    'NANO',
     'UNI',
-    'LTC',
-    'REP'
+    'ETC',
+    'SOL',
+    'WAVES',
+    'LINK',
+    'XTZ'
 ]
 global.tradingData ={
     symbol:{},
@@ -272,7 +273,7 @@ async function scanMarket(){
                 let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;
                 console.log(binanceSymbol, 'buy base volume?', buyBaseVolume,'buy Asset Volume?', buyAssetVolume, 'timestamp =', closeTime, 'vs raw time', rawUtcTimeNow)
                 sma9Promise(a, i).then(data =>{
-                   // console.log(a, data,'sma 9 data inside scan close', close)
+                   console.log(a, data,'sma 9 data inside scan close', close)
                     const buy = (close > data)
                     console.log('buy?', buy, 'asset', a)
                     if(close > data && global.myBalances.buyingPower < 10) {

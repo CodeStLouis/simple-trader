@@ -57,6 +57,7 @@ class bitstampSellStream{
             console.log(err, 'in sell stream method line 85', global.tradeData)
         })
 
+
     }
     async sellPromise(amount, price, tradeSymbol){
         return new Promise((resolve, reject)=>{
@@ -78,7 +79,7 @@ class bitstampSellStream{
                 bitstampStream.on(inTradeSellStream, ({ data, event}) =>{
                     console.log(streamSymbol, 'in order book line 58, getting price in selling order book', $.of(data.bids[0][0]).valueOf())
                     let orderWithQuantityOfOne = $.of(data.bids[0][1]).valueOf()
-                    if(orderWithQuantityOfOne > 1){
+                    if($.of(data.bids[0][1]).valueOf() > 1){
                         global.tradeData.price = $.of(data.bids[0][0]).valueOf()
                         console.log('in sell order book line 62', global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade)
                         this.sellPromise(global.tradeData.amount, global.tradeData.price, global.tradeData.symbolInTrade).then(resp =>{

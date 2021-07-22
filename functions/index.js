@@ -56,11 +56,12 @@ const binanceAssets = [
     'ADA',
     'NANO',
     'UNI',
-    'EGLD',
     'ETC',
     'SOL',
     'WAVES',
-    'LINK'
+    'LINK',
+    'HNT',
+    'fil'
 ]
 const intervals = ['1m']
 const fetch = require('node-fetch');
@@ -191,8 +192,8 @@ async function getAssetBalanceOnBinance(asset){
 }
 async function isConsolidated(asset){
     // if sma 5 is less than nine its consolidated = true
-    await getSMAFive(asset, '15m').then(sma5 =>{
-       getSMANine(asset, '15m').then(sma9 =>{
+    await getSMAFive(asset, '1m').then(sma5 =>{
+       getSMANine(asset, '1m').then(sma9 =>{
            if (sma5 < sma9){
                console.log(asset, 'is consolidated not a break out candles', global.tradeData.isConslidated = true)
                global.tradeData.isConslidated = true
@@ -270,9 +271,7 @@ function getPricing(asset){
         })
     })
 }
-/*getSellingPrice(global.tradeData.symbolInTrade).then(sell =>{
-    console.log('spot trade in get selling price index line 242', global.tradeData)
-})*/
+
 
 getOpenOrders().then(data =>{
     console.log('calling open orders')
@@ -341,6 +340,34 @@ setInterval(function() {
 
     }
 
+     for(let c of crypto) {
+         if(global.inTrade === false){
+           //  getSMATwentyFive(c, '5m').then()
+             const i = '1m'
+             getCandlesLastTick(c, i).then(resp =>{
+                 console.log(c, 'call candles at', i)
+             })
+
+         }
+     }
+}, 15000)
+async function placeSellOrderOnBitstamp(amount, price, tradeSymbol){
+    const sellTradeSymbol = tradeSymbol.toLowerCase() + 'usd'
+    if(amount === undefined || null || price === undefined || null && tradeSymbol !== undefined || null){
+        console.log(tradeSymbol, 'do not make incorrect calls line 313 index')
+        getCandlesLastTick(tradeSymbol, '1m').then()
+        return 'trade data incomplete'
+    } else {
+        console.log(sellTradeSymbol, 'trade dat complete', global.tradeData)
+        return bitstamp.sellLimitOrder(amount, price, sellTradeSymbol, null, false).then(resp =>{
+            console.log(resp, 'placed sell order ', amount, price, tradeSymbol, null, false)
+            global.intrade = false
+        }).then(resp =>{
+            return this.turnOffOrderBook()
+        }).catch(err =>{
+            console.log(err, 'in sell method index line 324', amount, price, sellTradeSymbol)
+
+
     async function sellBitstampPromise(amount, price, tradeSymbol) {
         return new Promise((resolve, reject) => {
             placeSellOrderOnBitstamp(amount, price, tradeSymbol).then(resp => {
@@ -349,6 +376,7 @@ setInterval(function() {
             }).catch(err => {
                 console.log(err, 'in sell promise index line 333')
             })
+
         })
     }
 
@@ -486,7 +514,7 @@ setInterval(function() {
 
             })
 
-        }, {limit: 1000, endTime: rawUtcTimeNow});
+        }, {limit: 100, endTime: rawUtcTimeNow});
 
 
     }
