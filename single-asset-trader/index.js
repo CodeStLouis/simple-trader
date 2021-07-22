@@ -32,6 +32,16 @@ global.myBalances ={
     buyingPower: {},
     balance:{}
 }
+global.buyPrice = {}
+global.sellPrice ={}
+let binanceSymbol = process.env.SYMBOL + 'USD'
+binanceUS.websockets.depthCache([`${binanceSymbol}`], (symbol, depth) => {
+    let bids = binanceUS.sortBids(depth.bids);
+    let asks = binanceUS.sortAsks(depth.asks);
+    global.sellPrice = +binanceUS.first(bids);
+    global.buyPrice = +binanceUS.first(asks);
+    // console.info("last updated: " + new Date(depth.eventTime));
+});
 let t = new Date
 const appUtils = new Utils()
 appUtils.getFormattedDate()
@@ -75,7 +85,7 @@ async function getAllBinanceBalances(){
             subtractPercent(10)).toNumber().toFixed(2)
         console.log(asset, 'amount after subtract 10% and dropped decimal to 2 places line 74', amount, balances.ETH.available)
         if(global.tradingData.orderType === 'sell'){
-            sellOrderPromise(symbol, amount, global.tradingData.price).then(l =>{
+            sellOrderPromise(symbol, amount, global.sellPrice).then(l =>{
                 console.log('placed sell order line 77 response',l)
             }).catch(err =>{
                 console.log(err, 'selling line 79')
@@ -215,13 +225,7 @@ async function scanMarket(asset) {
             console.info("close: " + close);
             console.info("volume: " + volume);
             console.info("isFinal: " + isFinal);*/
-            binanceUS.websockets.depthCache([`${binanceSymbol}`, `${symbolUSDT}`], (symbol, depth) => {
-                let bids = binanceUS.sortBids(depth.bids);
-                let asks = binanceUS.sortAsks(depth.asks);
-                console.info("best bid: "+binanceUS.first(bids));
-                console.info("best ask: "+binanceUS.first(asks));
-               // console.info("last updated: " + new Date(depth.eventTime));
-            });
+
             sma9Promise(asset, i).then(data => {
                 let price = parseFloat(ticker[binanceSymbol])
                  console.log(asset, data,'sma 9 data inside scan close', close, 'price',price)
@@ -246,7 +250,7 @@ async function scanMarket(asset) {
                         console.log('Last Trading Data in 9 = ', global.tradingData, 'buying power =', global.myBalances.buyingPower, 'trade value =', tradeValue)
                         if (global.myBalances.buyingPower > 15) {
                             console.log('symbol right before buy', JSON.stringify(binanceSymbol))
-                            buyOrderPromise(binanceSymbol, global.tradingData.amount, global.tradingData.price).then(resp =>{
+                            buyOrderPromise(binanceSymbol, global.tradingData.amount, global.buyPrice).then(resp =>{
                                 console.log(resp, 'placing buy order on binance')
                             }).catch(err =>{
                                 console.log(err, 'placing buy on binance')
@@ -285,7 +289,7 @@ getAllBinanceBalances().then(balance =>{
         utils.getFormattedDate()
         console.log(process.env.SYMBOL, 'in interval', global.tradingData, 'balances',global.myBalances,'buying power', global.myBalances.buyingPower)
     })
-}, 20000)
+}, 30000)
 })
 
 
