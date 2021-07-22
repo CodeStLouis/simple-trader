@@ -17,8 +17,8 @@ const binanceUS = new Binanceus().options({
     verbose: true,
 });
 const limiter = new Bottleneck({
-    maxConcurrent: 5,
-    minTime: 500
+    maxConcurrent: 3,
+    minTime: 1000
 });
 
 let t = new Date
@@ -138,9 +138,8 @@ async function getAssetsOwnedAndSell(asset, price){
         obj.total = add($(obj.available),$(obj.onOrder)).toString()
         let objNumber = $(obj).toNumber()
         //  global.balance[asset] = obj.total;
-        let tradeAvailableValue = currency.available * price
+        let tradeAvailableValue = currency.available * global.tradingData.price
        // let convertedTAV = $.of(tradeAvailableValue)
-        //console.log(asset, 'worth in balance', tradeAvailableValue)
         if(tradeAvailableValue > 10){
             if(asset !== null || true && global.tradingData.orderType === 'sell'){
                 global.myBalances.assets.push({symbol: asset, quantity: currency.available, tradeValueInUSD: tradeAvailableValue})
@@ -268,7 +267,7 @@ async function scanMarket(){
         //getAssetsOwned(binanceSymbol).then()
         limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker)=>{
             if ( error ) console.error(error);
-            binanceUS.candlesticks(`${binanceSymbol}`, "1m", (error, ticks, symbol) => {
+            binanceUS.candlesticks(`${binanceSymbol}`, "5m", (error, ticks, symbol) => {
                 // console.info("candlesticks()", ticks);
                 let last_tick = ticks[ticks.length - 1];
                 let [time, open, high, low, close, volume, closeTime, assetVolume, trades, buyBaseVolume, buyAssetVolume, ignored] = last_tick;

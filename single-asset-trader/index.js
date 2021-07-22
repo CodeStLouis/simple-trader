@@ -69,14 +69,21 @@ async function getAllBinanceBalances(){
         console.info("balances()", balances);
         console.info(asset ," balance: ", balances.ETH.available);
         let currency = balances[`${asset}`]
+        const symbol = global.tradingData.symbol + 'USD'
         let amount = +$$(
             $(balances.ETH.available),
             subtractPercent(10)).toNumber().toFixed(2)
-        console.log(asset, 'amount after subtract 10% and dropped decimal to 2 places', amount, balances.ETH.available)
-        return amount
+        console.log(asset, 'amount after subtract 10% and dropped decimal to 2 places line 74', amount, balances.ETH.available)
+        if(global.tradingData.orderType === 'sell'){
+            sellOrderPromise(symbol, amount, global.tradingData.price).then(l =>{
+                console.log('placed sell order line 77 response',l)
+            }).catch(err =>{
+                console.log(err, 'selling line 79')
+            })
+        }
     });
 }
-getAllBinanceBalances()
+//getAllBinanceBalances()
 const sma = require('trading-indicator').sma
 async function getSMANine(s, i){
       console.log(s, 'in sma 9')
@@ -249,9 +256,9 @@ async function scanMarket(asset) {
                 if (close < data) {
                     let sellPrice = parseFloat(ticker[binanceSymbol]);
                     global.tradingData.orderType = 'sell'
+
                     console.log(asset, 'sell it if own it')
                    getBalanceAndSellAsset(asset, sellPrice)
-
                 }
             }).catch(err =>{
                 console.log(err, 'getting sma 5')
@@ -260,15 +267,15 @@ async function scanMarket(asset) {
 
     }))
 }
-getAllBinanceBalances().then(data=>{
+getAllBinanceBalances().then(balance =>{
     setInterval(function (){
-    scanMarket(process.env.SYMBOL).then(data =>{
+    scanMarket(process.env.SYMBOL).then(no =>{
         const utils = new Utils()
         cancelAllOpenOrders().then()
         getBuyingPower().then()
-        getAllBinanceBalances().then()
+       // getAllBinanceBalances().then()
         utils.getFormattedDate()
-        console.log('in interval', global.tradingData, 'balances',global.myBalances,'buying power', global.myBalances.buyingPower)
+        console.log(process.env.SYMBOL, 'in interval', global.tradingData, 'balances',global.myBalances,'buying power', global.myBalances.buyingPower)
     })
 }, 20000)
 })
