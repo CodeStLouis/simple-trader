@@ -64,7 +64,7 @@ const binanceAssets = [
     'WAVES',
     'LINK'
 ]
-const intervals = ['5m']
+const intervals = ['1m']
 const fetch = require('node-fetch');
 const events = require("events");
 const trader = require("./common/bitstamp-trader"); // new
@@ -172,8 +172,8 @@ async function getAssetBalanceOnBinance(asset){
 }
 async function isConsolidated(asset){
     // if sma 5 is less than nine its consolidated = true
-    await getSMAFive(asset, '15m').then(sma5 =>{
-       getSMANine(asset, '15m').then(sma9 =>{
+    await getSMAFive(asset, '1m').then(sma5 =>{
+       getSMANine(asset, '1m').then(sma9 =>{
            if (sma5 < sma9){
                console.log(asset, 'is consolidated not a break out candles', global.tradeData.isConslidated = true)
                global.tradeData.isConslidated = true
@@ -299,23 +299,18 @@ setInterval(function() {
      for(let c of crypto) {
          if(global.inTrade === false){
            //  getSMATwentyFive(c, '5m').then()
-             const i = '5m'
+             const i = '1m'
              getCandlesLastTick(c, i).then(resp =>{
                  console.log(c, 'call candles at', i)
-             }).then(fifteen =>{
-                 const i = '15m'
-                 getCandlesLastTick(c, i).then(resp =>{
-                     console.log(c, 'checking fifteen minute time frame', i)
-                 })
              })
 
          }
      }
-}, 30000)
+}, 15000)
 async function placeSellOrderOnBitstamp(amount, price, tradeSymbol){
     const sellTradeSymbol = tradeSymbol.toLowerCase() + 'usd'
     if(amount === undefined || null || price === undefined || null && tradeSymbol !== undefined || null){
-        console.log(tradeSymbol, 'do not make incorrect calls line 319 index')
+        console.log(tradeSymbol, 'do not make incorrect calls line 313 index')
         getCandlesLastTick(tradeSymbol, '1m').then()
         return 'trade data incomplete'
     } else {
