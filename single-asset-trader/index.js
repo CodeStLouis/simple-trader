@@ -188,6 +188,7 @@ async function getBalanceAndSellAsset(asset, price){
 }
 async function scanMarket(asset) {
     let binanceSymbol = asset + 'USD'
+    let symbolUSDT = asset + 'USDT'
     const i = '1m'
     //getAssetsOwned(binanceSymbol).then()
     limiter.schedule(() => binanceUS.prices(binanceSymbol, (error, ticker) => {
@@ -214,6 +215,13 @@ async function scanMarket(asset) {
             console.info("close: " + close);
             console.info("volume: " + volume);
             console.info("isFinal: " + isFinal);*/
+            binanceUS.websockets.depthCache([`${binanceSymbol}`, `${symbolUSDT}`], (symbol, depth) => {
+                let bids = binanceUS.sortBids(depth.bids);
+                let asks = binanceUS.sortAsks(depth.asks);
+                console.info("best bid: "+binanceUS.first(bids));
+                console.info("best ask: "+binanceUS.first(asks));
+               // console.info("last updated: " + new Date(depth.eventTime));
+            });
             sma9Promise(asset, i).then(data => {
                 let price = parseFloat(ticker[binanceSymbol])
                  console.log(asset, data,'sma 9 data inside scan close', close, 'price',price)
